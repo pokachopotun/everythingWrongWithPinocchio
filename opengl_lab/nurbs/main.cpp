@@ -25,94 +25,128 @@ GLUnurbsObj* nobj;
 //	gluLookAt(4, 6, 5, 0, 0, 0, 0, 1, 0);
 //}
 
-const int rcnt = 4;
-double xi[rcnt];
-double ti[rcnt];
+//const double eps = 1e-6;
+const int rcnt = 20;
+const int n = 5;
+ 
+GLfloat ti[rcnt];
 const int k = 3;
-Matrix Nmat(k, rcnt), NmatRev(rcnt, k), D(rcnt, 2), B(rcnt, 2);
-int tmax = rcnt - k + 1;
-const int knotWsize = k * 2 + rcnt - 1;
+Matrix Nmat(rcnt, n), D(rcnt, 2), B(n, 2);
+const int tmax = n - k + 1;
+const int knotWsize = k * 2 + tmax - 1;
+GLfloat xi[knotWsize + 1];
 GLfloat knotW[knotWsize];
 
 
 void init_knotw() {
 
-	for (int i = 0; i < rcnt; i++) {
+	for (int i = 0; i <= tmax; i++) {
 		knotW[i + k - 1] = i;
 	}
 
 	for (int i = 0; i < k; i++) {
 		knotW[i] = 0;
-		knotW[knotWsize - 1 - i] = rcnt;
+		knotW[knotWsize - 1 - i] = tmax;
 	}
 }
 
 
-double dist(double x0, double y0, double x1, double y1) {
+double dist(GLfloat x0, GLfloat y0, GLfloat x1, GLfloat y1) {
 	return sqrt((x1 - x0) * (x1 - x0) + (y1 - y0)*(y1 - y0));
 }
 
-void init_ti() {
-	ti[0] = 0;
-	for (int i = 1; i < rcnt; i++) {
-		 double d = dist(D[i][0], D[i][1], D[i - 1][0], D[i - 1][1]);
-		ti[i] = ti[i - 1] + d;
-	}
-	//for (int i = 1; i < rcnt - 1; i++) {
-	//	ti[i] /= ti[rcnt - 1];
-	//}
-}
 
-double Nikt(int i, int k, double t) {
-	if (k == 1) {
-		if (ti[i - 1] <= t && t < ti[i]) {
+GLfloat Nikt(int i, int k1, GLfloat t) {
+	if (k1 == 1) {
+		if (xi[i] <= t && t <= xi[i + 1]) {
 			return 1.0;
 		}
 		else
 			return 0.0;
 	}
-	double a = (t - ti[i - 1]) * Nikt(i, k - 1, t);
-	double c = (ti[i + k - 2] - ti[i - 1]);
+	GLfloat a = (t - xi[i]) * Nikt(i, k1 - 1, t);
+	GLfloat c = (xi[i + k1 - 1] - xi[i]);
 	
-	double b = (ti[i + k - 1] - t) * Nikt(i + 1, k - 1, t);
-	double d = (ti[i + k - 1] - ti[i]);
-	if (c == 0.0) {
-		a = 0;
+	GLfloat b = (xi[i + k1] - t) * Nikt(i + 1, k1 - 1, t);
+	GLfloat d = (xi[i + k1] - xi[i + 1]);
+	GLfloat ans = 0;
+	if (c != 0.0) {
+		ans += a / c;
 	}
-	else {
-		a /= c;
+	if(d != 0.0){
+		ans += b / d;
 	}
-	if (d == 0.0) {
-		b = 0;
-	}
-	else {
-		b /= d;
-	}
-	return a + b;
+	return ans;
 }
+
+//GLfloat matrix[2 * n + 2][2 * k + 2];
+//
+//void calc_matrix(GLfloat t)
+//{
+//	for (int i = 0; i <= 2 * n + 1; i++) {
+//		for (int j = 0; j <= 2 * k + 1; j++) {
+//			matrix[i][j] = 0;
+//		}
+//	}
+//	for (int i = 0; i <= 2 * n + 1; i++) {
+//		if (ti[i] <= t && t < ti[i + 1])
+//			matrix[i][1] = 1.0;
+//		else
+//			matrix[i][1] = 0.0;
+//	}
+//	for (int ki = 2; ki <= 2 * k + 1; ki++) {
+//		for (int i = 0; i <= 2 * n + 1; i++) {
+//
+//			if ((ti[i + ki - 1] - ti[i]) != 0)
+//				matrix[i][ki] += (t - ti[i]) * matrix[i][ki - 1] / (ti[i + ki - 1] - ti[i]);
+//			if ((ti[i + ki] - ti[i + 1]) != 0)
+//				matrix[i][ki] += (ti[i + ki] - t) * matrix[i + 1][ki - 1] / (ti[i + ki] - ti[i + 1]);
+//		}
+//	}
+//}
 
 void init_mat() {
 
 	for (int i = 0; i < rcnt; i++) {
-		D[i][0] = i * 2.0 * M_PI / rcnt;
-		D[i][1] = cos(D[i][0]);
+		D[i][0] = i * M_PI / 5;
+		D[i][1] = sin(D[i][0]);
 	}
+	//D[0][0] = 0;
+	//D[0][1] = 0;
+	//D[1][0] = 1.5;
+	//D[1][1] = 2;
+	//D[2][0] = 3;
+	//D[2][1] = 2.5;
+	//D[3][0] = 4.5;
+	//D[3][1] = 2;
+	//D[4][0] = 6;
+	//D[4][1] = 0;
 	/*for (int i = 0; i < rcnt; i++) {
 		D[i][0] /= D[rcnt - 1][0];
 	}*/
-	init_ti();
-	for (int i = 0; i < rcnt; i++) {
-		for (int j = 0; j < k; j++) {
-			Nmat[j][i] = Nikt(i + 1, j + 1, ti[i]);
+	ti[0] = 0;
+	for (int i = 1; i < rcnt; i++) {
+		ti[i] = ti[i - 1] + dist(D[i][0], D[i][1], D[i - 1][0], D[i - 1][1]);
+	}
+
+	for (int i = 1; i <= knotWsize; i++) {
+		xi[i] = ti[rcnt - 1] * static_cast<GLfloat>(knotW[i - 1]) / knotW[knotWsize - 1];
+	}
+
+	for (int i = 1; i <= n; i++) {
+		for (int j = 1; j <= rcnt; j++) {
+			Nmat[j - 1][i - 1] = Nikt(i, k, ti[j - 1]);
 		}
 	}
+	//Nmat[4][4] = 1;
 	Matrix NT(Nmat.cols(), Nmat.rows());
 	for (int i = 0; i < Nmat.rows(); i++)
 		for (int j = 0; j < Nmat.cols(); j++)
 			NT[j][i] = Nmat[i][j];
 	Matrix tmp = NT * Nmat;
 	B =  tmp.getInverse() * NT * D;
-
+	//B = Nmat.getInverse() * D;	
+	//Matrix test = Nmat * Nmat.getInverse();
 }
 
 void DisplaySurface()
@@ -123,20 +157,20 @@ void DisplaySurface()
 	GLUnurbsObj* nobj = gluNewNurbsRenderer();
 	glEnable(GL_DEPTH_TEST);
 	gluNurbsProperty(nobj, GLU_SAMPLING_TOLERANCE, 25.0);
-	GLfloat one_direction[rcnt][4];
-	for (int i = 0; i < rcnt; i++) {
-		one_direction[i][0] = B[i][0];
-		one_direction[i][1] = B[i][1];
+	GLfloat one_direction[n][4];
+	for (int i = 0; i < n; i++) {
+		one_direction[i][0] = B[i][0]/10;
+		one_direction[i][1] = B[i][1]/10;
 		one_direction[i][2] = 0.0;
 		one_direction[i][3] = 1.0;
 	}
 
 
 	const int N = 20;
-	GLfloat ctlarray[N][rcnt][4];
+	GLfloat ctlarray[N][n][4];
 	
 	for (int i = 0; i < N; i++) {
-		for (int j = 0; j < rcnt; j++) {
+		for (int j = 0; j < n; j++) {
 			GLfloat c = cos(M_PI * 2.0 * static_cast<GLfloat>(i) / (N - 2));
 			GLfloat s = sin(M_PI * 2.0 * static_cast<GLfloat>(i) / (N - 2)); 
 			ctlarray[i][j][0] = one_direction[j][0] * c - one_direction[j][2] * s;
@@ -166,7 +200,7 @@ void DisplaySurface()
 
 	gluBeginSurface(nobj);
 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-	gluNurbsSurface(nobj, knotUsize, knotU, knotWsize, knotW, rcnt * 4, 4, &ctlarray[0][0][0], 4, k, GL_MAP2_VERTEX_4);
+	gluNurbsSurface(nobj, knotUsize, knotU, knotWsize, knotW, n * 4, 4, &ctlarray[0][0][0], 4, k, GL_MAP2_VERTEX_4);
 	gluEndSurface(nobj);
 
 	glEnd();
@@ -184,7 +218,7 @@ void main(int argcp, char *argv[])
 	glutInitWindowPosition(100, 100);
 	glutCreateWindow(" ");
 	//init();
-	//init_ti();
+
 	init_knotw();
 	init_mat();
 
