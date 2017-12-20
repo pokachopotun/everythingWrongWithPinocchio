@@ -1,0 +1,205 @@
+hor 224
+fd 480 hor 64
+fd 224 hor 224
+rt 180 fd 448 rt 180 rt 90 fd 32 lt 90 hor 64
+fd 96 hor 64
+fd 224 hor 64
+rt 180 fd 512 rt 180 rt 90 fd 32 lt 90 hor 96
+fd 192 hor 64
+fd 224 hor 64
+fd 288 hor 96
+rt 180 fd 704 rt 180 rt 90 fd 32 lt 90 hor 96
+fd 224 hor 64
+fd 224 hor 64
+fd 256 hor 96
+rt 180 fd 704 rt 180 rt 90 fd 32 lt 90 hor 96
+fd 256 hor 64
+fd 128 hor 128
+fd 320 hor 96
+rt 180 fd 288 rt 180 rt 90 fd 32 lt 90 hor 64
+rt 180 fd 480 rt 180 rt 90 fd 32 lt 90 hor 224
+fd 704 hor 224
+rt 180 fd 224 rt 180 rt 90 fd 32 lt 90 hor 64
+rt 180 fd 384 rt 180 rt 90 fd 32 lt 90 hor 192
+fd 256 hor 96
+fd 480 hor 96
+rt 180 fd 832 rt 180 rt 90 fd 32 lt 90 hor 64
+fd 512 hor 128
+fd 320 hor 64
+rt 180 fd 672 rt 180 rt 90 fd 32 lt 90 hor 96
+fd 192 hor 96
+fd 128 hor 64
+rt 180 fd 448 rt 180 rt 90 fd 32 lt 90 hor 128
+fd 192 hor 64
+fd 288 hor 96
+rt 180 fd 480 rt 180 rt 90 fd 32 lt 90 hor 64
+fd 160 hor 64
+fd 288 hor 96
+fd 224 hor 64
+rt 180 fd 608 rt 180 rt 90 fd 32 lt 90 hor 64
+fd 160 hor 224
+fd 256 hor 64
+fd 160 hor 256
+rt 180 fd 608 rt 180 rt 90 fd 32 lt 90 hor 64
+fd 96 hor 288
+fd 352 hor 64
+fd 160 hor 64
+rt 180 fd 576 rt 180 rt 90 fd 32 lt 90 hor 96
+fd 192 hor 128
+fd 352 hor 64
+fd 96 hor 64
+rt 180 fd 672 rt 180 rt 90 fd 32 lt 90 hor 160
+fd 224 hor 96
+rt 180 fd 288 rt 180 rt 90 fd 32 lt 90 hor 64
+fd 96 hor 64
+fd 160 hor 64
+fd 160 hor 64
+fd 96 hor 64
+fd 96 hor 64
+fd 224 hor 64
+rt 180 fd 832 rt 180 rt 90 fd 32 lt 90 hor 64
+fd 96 hor 128
+fd 224 hor 96
+fd 256 hor 64
+fd 192 hor 64
+rt 180 fd 768 rt 180 rt 90 fd 32 lt 90 hor 64
+fd 96 hor 64
+fd 128 hor 96
+fd 224 hor 64
+fd 224 hor 64
+fd 96 hor 96
+rt 180 fd 768 rt 180 rt 90 fd 32 lt 90 hor 96
+fd 128 hor 96
+fd 224 hor 160
+fd 288 hor 256
+rt 180 fd 320 rt 180 rt 90 fd 32 lt 90 hor 64
+fd 128 hor 64
+fd 320 hor 64
+rt 180 fd 768 rt 180 rt 90 fd 32 lt 90 hor 224
+fd 256 hor 64
+fd 192 hor 64
+fd 96 hor 128
+fd 224 hor 64
+rt 180 fd 512 rt 180 rt 90 fd 32 lt 90 hor 96
+fd 192 hor 160
+rt 180 fd 384 rt 180 rt 90 fd 32 lt 90 hor 96
+fd 256 hor 160
+fd 288 hor 224
+fd 256 hor 64
+rt 180 fd 800 rt 180 rt 90 fd 32 lt 90 hor 96
+fd 544 hor 64
+rt 180 fd 544 rt 180 rt 90 fd 32 lt 90 hor 96
+fd 672 hor 64
+fd 96 hor 96
+rt 180 fd 96 rt 180 rt 90 fd 32 lt 90 hor 128
+rt 180 fd 736 rt 180 rt 90 fd 32 lt 90 hor 224
+fd 352 hor 128
+fd 256 hor 64
+fd 96 hor 64
+rt 180 fd 704 rt 180 rt 90 bk 896 lt 90 ver 224
+rt 90 fd 256 lt 90 ver 96
+rt 90 fd 256 lt 90 ver 160
+rt 90 fd 192 lt 90 ver 224
+fd 32 rt 90 bk 352 lt 90 ver 96
+rt 90 fd 192 lt 90 ver 128
+fd 32 rt 90 bk 480 lt 90 ver 96
+rt 90 fd 288 lt 90 ver 64
+rt 90 fd 416 lt 90 ver 96
+fd 32 rt 90 bk 704 lt 90 ver 96
+rt 90 fd 192 lt 90 ver 128
+rt 90 fd 160 lt 90 ver 224
+rt 90 fd 352 lt 90 ver 96
+fd 32 rt 90 bk 704 lt 90 ver 96
+rt 90 fd 416 lt 90 ver 192
+rt 90 fd 288 lt 90 ver 96
+fd 32 rt 90 bk 512 lt 90 ver 96
+rt 90 fd 192 lt 90 ver 96
+fd 32 rt 90 bk 448 lt 90 ver 224
+rt 90 fd 704 lt 90 ver 224
+fd 32 rt 90 bk 384 lt 90 ver 96
+fd 32 rt 90 bk 320 lt 90 ver 96
+rt 90 fd 256 lt 90 ver 64
+rt 90 fd 160 lt 90 ver 64
+rt 90 fd 128 lt 90 ver 96
+rt 90 fd 128 lt 90 ver 160
+fd 32 rt 90 bk 640 lt 90 ver 96
+rt 90 fd 352 lt 90 ver 192
+rt 90 fd 224 lt 90 ver 64
+rt 90 fd 96 lt 90 ver 64
+rt 90 fd 128 lt 90 ver 64
+fd 32 rt 90 bk 736 lt 90 ver 64
+rt 90 fd 96 lt 90 ver 64
+rt 90 fd 224 lt 90 ver 128
+rt 90 fd 320 lt 90 ver 96
+fd 32 rt 90 bk 480 lt 90 ver 96
+rt 90 fd 128 lt 90 ver 352
+fd 32 rt 90 bk 384 lt 90 ver 96
+rt 90 fd 160 lt 90 ver 64
+rt 90 fd 256 lt 90 ver 96
+rt 90 fd 352 lt 90 ver 64
+fd 32 rt 90 bk 544 lt 90 ver 256
+fd 32 rt 90 fd 288 lt 90 ver 64
+rt 90 fd 96 lt 90 ver 192
+fd 32 rt 90 bk 480 lt 90 ver 64
+rt 90 fd 448 lt 90 ver 192
+fd 32 rt 90 bk 576 lt 90 ver 256
+rt 90 fd 288 lt 90 ver 192
+fd 32 rt 90 bk 192 lt 90 ver 64
+rt 90 fd 256 lt 90 ver 128
+rt 90 fd 352 lt 90 ver 64
+fd 32 rt 90 bk 672 lt 90 ver 64
+rt 90 fd 672 lt 90 ver 64
+fd 32 rt 90 bk 704 lt 90 ver 64
+rt 90 fd 416 lt 90 ver 64
+rt 90 fd 128 lt 90 ver 64
+rt 90 fd 224 lt 90 ver 64
+fd 32 rt 90 bk 704 lt 90 ver 64
+rt 90 fd 128 lt 90 ver 64
+rt 90 fd 448 lt 90 ver 192
+fd 32 rt 90 bk 224 lt 90 ver 96
+rt 90 fd 160 lt 90 ver 96
+rt 90 fd 256 lt 90 ver 64
+fd 32 rt 90 bk 832 lt 90 ver 224
+rt 90 fd 384 lt 90 ver 96
+rt 90 fd 224 lt 90 ver 64
+fd 32 rt 90 bk 256 lt 90 ver 96
+rt 90 fd 128 lt 90 ver 64
+rt 90 fd 352 lt 90 ver 96
+fd 32 rt 90 bk 768 lt 90 ver 96
+rt 90 fd 192 lt 90 ver 96
+rt 90 fd 160 lt 90 ver 96
+rt 90 fd 128 lt 90 ver 256
+rt 90 fd 288 lt 90 ver 64
+fd 32 rt 90 bk 768 lt 90 ver 96
+rt 90 fd 512 lt 90 ver 160
+rt 90 fd 288 lt 90 ver 64
+fd 32 rt 90 bk 800 lt 90 ver 96
+rt 90 fd 192 lt 90 ver 96
+rt 90 fd 160 lt 90 ver 96
+rt 90 fd 192 lt 90 ver 64
+rt 90 fd 224 lt 90 ver 64
+fd 32 rt 90 bk 576 lt 90 ver 64
+fd 32 rt 90 bk 256 lt 90 ver 224
+rt 90 fd 352 lt 90 ver 160
+rt 90 fd 384 lt 90 ver 160
+rt 180 fd 640 rt 180 rt 90 bk 608 lt 90 lonely 32
+fd 352 lonely 32
+rt 180 fd 352 rt 180 rt 90 fd 64 lt 90 lonely 32
+fd 192 lonely 32
+fd 128 lonely 32
+fd 96 rt 90 fd 64 lt 90 lonely 32
+rt 180 fd 384 rt 180 rt 90 fd 64 lt 90 lonely 32
+fd 352 lonely 32
+fd 64 lonely 32
+fd 96 rt 90 fd 32 lt 90 lonely 32
+rt 180 fd 160 rt 180 rt 90 fd 32 lt 90 lonely 32
+rt 180 fd 640 rt 180 rt 90 fd 64 lt 90 lonely 32
+fd 480 rt 90 fd 32 lt 90 lonely 32
+fd 96 rt 90 fd 32 lt 90 lonely 32
+fd 224 lonely 32
+fd 96 rt 90 fd 64 lt 90 lonely 32
+rt 180 fd 192 rt 180 rt 90 fd 128 lt 90 lonely 32
+rt 180 fd 192 rt 180 rt 90 fd 96 lt 90 lonely 32
+rt 180 fd 32 rt 180 rt 90 fd 32 lt 90 lonely 32
+fd 32 rt 90 fd 32 lt 90 lonely 32
+rt 180 fd 256 rt 180 rt 90 fd 32 lt 90 lonely 32

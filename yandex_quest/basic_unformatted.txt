@@ -1,0 +1,121 @@
+DECLARE FUNCTION F(N)                                 
+FUNCTION F(N)                                         
+DIM SHARED A(N) AS INTEGER                            
+                                                      
+DECLARE FUNCTION H(N)                                 
+FUNCTION H(N)                                         
+T = 0                                                 
+P = 0                                                 
+B = 0                                                 
+FOR I% = 0 TO N-1                                     
+P = (P AND 8191) * 2                                  
+B = (B AND 8191) * 2                                  
+IF I% MOD 2 = 1 THEN                                  
+P = P + A(I%)                                         
+ELSE                                                  
+B = B + A(I%)                                         
+END IF                                                
+Q = 1                                                 
+W = 1                                                 
+S = Q + W                                             
+FOR D% = 2 TO P-1                                     
+IF P MOD D% = 0 THEN                                  
+Q = D%                                                
+FOR Y% = 2 TO B-1                                     
+IF B MOD Y% = 0 THEN                                  
+W = Y%                                                
+FOR O% = 1 TO Q*W                                     
+IF (Q + W) MOD O% = 0 THEN                            
+S = S + Q + W                                         
+END IF                                                
+NEXT O%                                               
+END IF                                                
+NEXT Y%                                               
+END IF                                                
+NEXT D%                                               
+IF Q=127 AND P=Q*43 AND B=2*W AND 1365=W AND S>=1 THEN
+T = 1                                                 
+END IF                                                
+IF Q=1365 AND B=Q*2 AND P=43*W AND 127=W AND S>=1 THEN
+T = 1                                                 
+END IF                                                
+NEXT I%                                               
+H = 1 - T                                             
+END FUNCTION                                          
+                                                      
+DECLARE FUNCTION G(B, N)                              
+FUNCTION G(B, N)                                      
+R = H(B)                                              
+IF B < N THEN                                         
+A(B) = A(B) ^ A(B)                                    
+R = R + G(B + 1, N)                                   
+A(B) = 1 - A(B)                                       
+R = R + G(B + 1, N)                                   
+G = R                                                 
+END IF                                                
+END FUNCTION                                          
+                                                      
+F = G(1, N)                                           
+END FUNCTION                                          
+                                                      
+PRINT "LINK TO THE NEXT TASK IS"                      
+PRINT "HTTP://BIT.DO/N25V{X}, WHERE {X}"              
+PRINT "IS THE LAST PRINTED NUMBER IN THIS SEQUENCE:"  
+FOR I% = 1 TO 25                                      
+PRINT F(I%)                                           
+NEXT I%                                               
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
