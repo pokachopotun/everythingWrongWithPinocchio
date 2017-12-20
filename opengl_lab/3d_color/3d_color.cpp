@@ -1,4 +1,4 @@
-#include "glut.h"
+#include "GL/glut.h"
 #include <cstdio>
 
 GLUquadricObj * theqw;

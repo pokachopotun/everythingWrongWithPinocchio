@@ -9,6 +9,8 @@ set(GLUT_LIBS glut)
 
 set(GLUT_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/glut)
 
+
+add_subdirectory(nurbs)
 add_subdirectory(teapot)
 
 add_subdirectory(3d_color)

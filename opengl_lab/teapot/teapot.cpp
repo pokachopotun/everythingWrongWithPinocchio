@@ -1,5 +1,5 @@
 #include <iostream>
-#include "glut.h"
+#include "GL/glut.h"
 
 
 GLUquadricObj * theqw;

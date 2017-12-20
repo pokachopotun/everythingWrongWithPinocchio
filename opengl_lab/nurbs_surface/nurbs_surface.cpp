@@ -1,5 +1,5 @@
 #define _USE_MATH_DEFINES
-#include "glut.h"
+#include "GL/glut.h"
 #include <math.h>
 GLUnurbsObj* nobj;
 GLfloat lightposition[] = { 13, 0, -5, 0 };

@@ -1,5 +1,5 @@
 #define _USE_MATH_DEFINES
-#include "freeglut/include/GL/glut.h" 
+#include "GL/glut.h" 
 #include "math.h"
 #include "mathadditionals.h"
 GLUnurbsObj* nobj;
