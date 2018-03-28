@@ -7,13 +7,15 @@ from scipy.spatial import distance
 
 
 def pt_sum(a, b):
+    #print(a,b)
     return [sum(x) for x in zip(a, b)]
 
 class generator:
     def __init__(self, args):
-        print("init generator")
+        #print("init generator")
         self.args = args
-
+        self.max_tries = 10000
+    #
     def generate_point_sphere(self, r, center = None):
         if center is None:
             center = [0.0 for x in range(self.args.dims)]
@@ -26,6 +28,37 @@ class generator:
         random.shuffle(pt)
         return pt_sum(pt, center)
 
+    def try_generate_point_sphere(self, r, d, cl, class_centers, center = None):
+        tries = 0
+        while True:
+            tries += 1
+            if tries > self.max_tries:
+                print("algorithm could not find a point. Exitting...")
+                for i in range(len(class_centers)):
+                    a = [x[0] for x in class_centers[i]]
+                    b = [x[1] for x in class_centers[i]]
+                    plt.plot(a, b, '.')
+                plt.show()
+                exit()
+            pt = self.generate_point_sphere(r, center)
+            flag = 0
+            for i in range(len(class_centers)):
+                if cl == i:
+                    continue
+                for j in range(len(class_centers[i])):
+                    p = class_centers[i][j]
+                    dst = distance.euclidean(p, pt)
+                    # a,b = i,cl
+                    # if a > b:
+                    #     a,b = b,a
+                    if dst < d:
+                        flag += 1
+            if flag <= 1:
+                return pt
+
+
+
+
     def generate_point_inner(self, r, center = None):
         if center is None:
             center = [0.0 for x in range(self.args.dims)]
@@ -35,48 +68,32 @@ class generator:
             pt.append(random.uniform(-sqrt(r_sq), sqrt(r_sq)))
             r_sq -= pt[-1] * pt[-1]
         random.shuffle(pt)
+        #print(pt, center)
         return pt_sum(pt, center)
 
     def generate_centers(self):
-        centers = list()
-        centers.append(self.generate_point_inner(self.args.dist))
-        while len(centers) < self.args.classes_cnt:
-            r_id = random.randint(0, len(centers) - 1)
-            pt = self.generate_point_sphere(self.args.dist, centers[r_id])
-            correct = True
-            # for i in range(len(centers)):
-            #     dst = distance.euclidean(centers[i], pt)
-            #     if dst < self.args.dist:
-            #         correct = False
-            #         break
-            if correct:
-                centers.append(pt)
+        centers = [list() for x in range(self.args.classes_cnt)]
+        for i in range(self.args.classes_cnt):
+            if i == 0:
+                ct = self.try_generate_point_sphere(self.args.dist, self.args.dist, i, centers)
+            else:
+                r_cl = random.randint(0, i - 1)
+                r_cl_c = random.randint(3 * int((self.args.centers - 1)/4), self.args.centers - 1)
+                ct = self.try_generate_point_sphere(self.args.dist, self.args.dist, i, centers, centers[r_cl][r_cl_c])
+            centers[i].append(ct)
+            for j in range(self.args.centers):
+                r_cl_c = random.randint(3 * int((len(centers[i]) - 1)/4), len(centers[i]) - 1)
+                pt = self.try_generate_point_sphere(self.args.step, self.args.dist, i, centers, centers[i][r_cl_c])
+                centers[i].append(pt)
         return centers
 
-    def generate_crossings(self, cnt, centers):
+    def generate_crossings(self, cnt):
         cross = set()
-        less = 0
-        while len(cross) < cnt:
+        while len(cross) < cnt and len(cross) < self.args.classes_cnt ** 2:
             if len(cross) >= cnt:
                 return cross
-            i = random.randint(0, len(centers) - 1)
-            j = random.randint(0, len(centers) - 1)
-            if j == i:
-                continue
-            if j < i:
-                i, j = j, i
-            dst = distance.euclidean(centers[i], centers[j])
-            if dst < 2 * self.args.R:
-                cross.add((i, j))
-        return cross
-
-    def generate_crossings_random(self, cnt, centers):
-        cross = set()
-        while len(cross) < cnt:
-            if len(cross) >= cnt:
-                return cross
-            i = random.randint(0, len(centers) - 1)
-            j = random.randint(0, len(centers) - 1)
+            i = random.randint(0, self.args.classes_cnt - 1)
+            j = random.randint(0, self.args.classes_cnt - 1)
             if j == i:
                 continue
             if j < i:
@@ -84,83 +101,74 @@ class generator:
             cross.add((i, j))
         return cross
 
-    def generate_by_density(self):
-        print("Dataset generating by Density")
-
-        centers = self.generate_centers()
-
-        cross = self.generate_crossings_random(self.args.crossings, centers)
-
-        pts = [list() for i in range(self.args.classes_cnt)]
-        for i in range(len(centers)):
-            pts[i].append(centers[i])
-        for i in range(self.args.N):
-            for class_id in range(self.args.classes_cnt):
-                while True:
-                    r_id = random.randint(0, len(pts[class_id]) - 1)
-                    pt = self.generate_point_sphere(self.args.density, pts[class_id][r_id])
-                    correct = True
-                    for cl_id in range(self.args.classes_cnt):
-                        if cl_id == class_id:
-                            continue
-                        dst = distance.euclidean(pt, centers[cl_id])
-                        a,b = class_id, cl_id
-                        if a > b:
-                            a,b = b,a
-                        if (dst < self.args.R and (a, b) not in cross and class_id == a) or (dst < self.args.R and (a, b) in cross) or dst >= self.args.R:
-                            correct = True
-                        else:
-                            correct = False
-                            break
-                    if correct:
-                        pts[class_id].append(pt)
-                        break
-                    else:
-                        continue
-
-        for cpt in pts:
-            a = [x[0] for x in cpt]
-            b = [x[1] for x in cpt]
-            plt.plot(a, b, 'o')
-
-        plt.show()
+    # def generate_crossings_random(self, cnt, centers):
+    #     cross = set()
+    #     while len(cross) < cnt:
+    #         if len(cross) >= cnt:
+    #             return cross
+    #         i = random.randint(0, len(centers) - 1)
+    #         j = random.randint(0, len(centers) - 1)
+    #         if j == i:
+    #             continue
+    #         if j < i:
+    #             i, j = j, i
+    #         cross.add((i, j))
+    #     return cross
 
     def generate_by_radius(self):
         print("Dataset generating by Radius")
 
         centers = self.generate_centers()
-        cross = self.generate_crossings(self.args.crossings, centers)
+        cross = self.generate_crossings(self.args.crossings)
+
+
 
         pts = [list() for i in range(self.args.classes_cnt)]
         for i in range(len(centers)):
-            pts[i].append(centers[i])
-        for i in range(self.args.N):
-            for class_id in range(self.args.classes_cnt):
-                while True:
-                    pt = self.generate_point_inner(self.args.R, centers[class_id])
-                    correct = True
-                    for cl_id in range(self.args.classes_cnt):
-                        if cl_id == class_id:
-                            continue
-                        dst = distance.euclidean(pt, centers[cl_id])
-                        a,b = class_id, cl_id
-                        if a > b:
-                            a,b = b,a
-                        if (dst < self.args.R and (a, b) not in cross and class_id == a) or (dst < self.args.R and (a, b) in cross) or dst >= self.args.R:
-                            correct = True
-                        else:
-                            correct = False
-                            break
-                    if correct:
-                        pts[class_id].append(pt)
-                        break
-                    else:
-                        continue
+            for j in range(len(centers[i])):
+                pts[i].append(centers[i][j])
+        # for i in range(len(centers)):
+        #     for j in range(len(centers[i])):
+        #         for k in range(self.args.N):
+        #             pts[i].append(self.generate_point_inner(self.args.R, centers[i][j]))
+        # for k in range(self.args.N):
+        #     for class_id in range(len(centers)):
+        #         for center_id in range(len(centers[class_id])):
+        #             pt = self.generate_point_inner(self.args.R, centers[class_id][center_id])
+        #             pts[class_id].append(pt)
+                    # cnt = 1000
+                    # while cnt > 0:
+                    #     cnt -= 1
+                    #
+                    #     correct = True
+                    #     for cl_id in range(self.args.classes_cnt):
+                    #         for ce_id in range(self.args.centers):
+                    #             if cl_id == class_id:
+                    #                 continue
+                    #             dst = distance.euclidean(pt, centers[class_id][center_id])
+                    #             a,b = class_id, cl_id
+                    #             if a > b:
+                    #                 a,b = b,a
+                    #             if (dst < self.args.R and (a, b) not in cross and class_id == a) or (dst < self.args.R and (a, b) in cross) or dst >= self.args.R:
+                    #                 correct = True
+                    #             else:
+                    #                 correct = False
+                    #                 break
+                    #     if correct:
+                    #
+                    #         break
+                    #     else:
+                    #         continue
+
         for i in range(len(pts)):
+           #print(pts[i])
             a = [x[0] for x in pts[i]]
             b = [x[1] for x in pts[i]]
             plt.plot(a, b, '.')
-
+        # for i in range(len(centers)):
+        #     a = [x[0] for x in centers[i]]
+        #     b = [x[1] for x in centers[i]]
+        #     plt.plot(a, b, '.')
         plt.show()
 
 
@@ -171,9 +179,10 @@ def check_args(args):
            and args.dims is not None \
            and args.classes_cnt is not None \
            and args.crossings is not None \
-           and args.dist is not None
-#           and args.R is not None \
-#           and args.density is not None
+           and args.dist is not None \
+           and args.step is not None \
+           and args.centers is not None \
+           and args.R is not None
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Dataset generator for Neural Networks course in MISIS')
@@ -187,20 +196,22 @@ if __name__ == "__main__":
                         help='distance between class centers')
     parser.add_argument('--R', type=float,
                         help='maximal distance from center to element')
-    parser.add_argument('--density', type=float,
-                        help='density of points, expressed as maximal distance from one point of the class to another')
-    parser.add_argument('--density_uniform', action='store_true',
-                        help='')
     parser.add_argument('--crossings', type=int,
                         help='expected (but not guaranteed ) number of intersections')
+    parser.add_argument('--step', type=float,
+                        help='distance between core points of the class')
+    parser.add_argument('--centers', type=int,
+                        help='quantity of core points')
 
     args = parser.parse_args()
     if True or check_args(args):
         gen = generator(args)
-        if args.density is not None:
-            gen.generate_by_density()
-        else:
-            gen.generate_by_radius()
+        gen.generate_by_radius()
     else:
         print("Error: Some arguments are missing... Use  --help for description")
     print('program finished successfully')
+
+
+#run command
+#  python dataset_generator.py --N 1000 --dims 2 --classes_cnt 2 --dist 1.5 --R 1.0 --crossings 0 --step 0.5 --centers 5
+#  py dataset_generator.py --N 100 --dims 2 --classes_cnt 10 --dist 7.0 --R 0.25 --crossings 0 --step 0.5 --centers 50
