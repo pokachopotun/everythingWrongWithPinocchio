@@ -28,7 +28,7 @@ class generator:
         random.shuffle(pt)
         return pt_sum(pt, center)
 
-    def try_generate_point_sphere(self, r, d, cl, class_centers, center = None):
+    def try_generate_point_sphere(self, r, d, cl, mass_centers, class_centers, center = None):
         tries = 0
         while True:
             tries += 1
@@ -42,18 +42,14 @@ class generator:
                 exit()
             pt = self.generate_point_sphere(r, center)
             flag = 0
-            for i in range(len(class_centers)):
+            for i in range(len(mass_centers)):
                 if cl == i:
                     continue
-                for j in range(len(class_centers[i])):
-                    p = class_centers[i][j]
-                    dst = distance.euclidean(p, pt)
-                    # a,b = i,cl
-                    # if a > b:
-                    #     a,b = b,a
-                    if dst < d:
-                        flag += 1
-            if flag <= 1:
+                p = mass_centers[i]
+                dst = distance.euclidean(p, pt)
+                if dst < d:
+                    flag += 1
+            if flag <= 0: # 1 + int(0.1 * len(class_centers)):
                 return pt
 
 
@@ -71,33 +67,54 @@ class generator:
         #print(pt, center)
         return pt_sum(pt, center)
 
+    def calc_mass_center(self, centers):
+        cm = [0.0 for x in range(self.args.dims)]
+        for e in centers:
+            for i in range(self.args.dims):
+                cm[i] += e[i]
+        for i in range(self.args.dims):
+            cm[i] /= self.args.dims
+        return cm
+
     def generate_centers(self):
+        print("generating centers")
         centers = [list() for x in range(self.args.classes_cnt)]
+        mass_centers = [0.0 for x in range(self.args.classes_cnt)]
         for i in range(self.args.classes_cnt):
             if i == 0:
-                ct = self.try_generate_point_sphere(self.args.dist, self.args.dist, i, centers)
+                ct = self.try_generate_point_sphere(self.args.dist, self.args.dist, i, mass_centers, centers)
             else:
                 r_cl = random.randint(0, i - 1)
                 r_cl_c = random.randint(3 * int((self.args.centers - 1)/4), self.args.centers - 1)
-                ct = self.try_generate_point_sphere(self.args.dist, self.args.dist, i, centers, centers[r_cl][r_cl_c])
+                ct = self.try_generate_point_sphere(self.args.dist, self.args.dist, i, mass_centers, centers, centers[r_cl][r_cl_c])
             centers[i].append(ct)
-            for j in range(self.args.centers):
+            mass_centers[i] = self.calc_mass_center(centers[i])
+            for j in range(1, self.args.centers):
                 r_cl_c = random.randint(3 * int((len(centers[i]) - 1)/4), len(centers[i]) - 1)
-                pt = self.try_generate_point_sphere(self.args.step, self.args.dist, i, centers, centers[i][r_cl_c])
+                pt = self.try_generate_point_sphere(self.args.step, self.args.dist, i, mass_centers, centers, centers[i][r_cl_c])
                 centers[i].append(pt)
+                mass_centers[i] = self.calc_mass_center(centers[i])
         return centers
 
     def generate_crossings(self, cnt):
+        print("generating crossings")
         cross = set()
-        while len(cross) < cnt and len(cross) < self.args.classes_cnt ** 2:
+        vars = list()
+        for i in range(self.args.classes_cnt):
+            for j in range(self.args.classes_cnt):
+                a = i
+                b = j
+                if a >= b:
+                    continue
+                if a > b:
+                    a, b = b, a
+                vars.append((a,b))
+
+        while len(cross) < cnt and len(cross) < len(vars):
             if len(cross) >= cnt:
                 return cross
-            i = random.randint(0, self.args.classes_cnt - 1)
-            j = random.randint(0, self.args.classes_cnt - 1)
-            if j == i:
-                continue
-            if j < i:
-                i, j = j, i
+            random.shuffle(vars)
+            i, j = vars.pop()
             cross.add((i, j))
         return cross
 
@@ -119,46 +136,49 @@ class generator:
         print("Dataset generating by Radius")
 
         centers = self.generate_centers()
-        cross = self.generate_crossings(self.args.crossings)
 
+        cross = self.generate_crossings(self.args.crossings)
+        print("crossings", cross)
 
 
         pts = [list() for i in range(self.args.classes_cnt)]
-        for i in range(len(centers)):
-            for j in range(len(centers[i])):
-                pts[i].append(centers[i][j])
+        # for i in range(len(centers)):
+        #     for j in range(len(centers[i])):
+        #         pts[i].append(centers[i][j])
         # for i in range(len(centers)):
         #     for j in range(len(centers[i])):
         #         for k in range(self.args.N):
         #             pts[i].append(self.generate_point_inner(self.args.R, centers[i][j]))
-        # for k in range(self.args.N):
-        #     for class_id in range(len(centers)):
-        #         for center_id in range(len(centers[class_id])):
-        #             pt = self.generate_point_inner(self.args.R, centers[class_id][center_id])
-        #             pts[class_id].append(pt)
-                    # cnt = 1000
-                    # while cnt > 0:
-                    #     cnt -= 1
-                    #
-                    #     correct = True
-                    #     for cl_id in range(self.args.classes_cnt):
-                    #         for ce_id in range(self.args.centers):
-                    #             if cl_id == class_id:
-                    #                 continue
-                    #             dst = distance.euclidean(pt, centers[class_id][center_id])
-                    #             a,b = class_id, cl_id
-                    #             if a > b:
-                    #                 a,b = b,a
-                    #             if (dst < self.args.R and (a, b) not in cross and class_id == a) or (dst < self.args.R and (a, b) in cross) or dst >= self.args.R:
-                    #                 correct = True
-                    #             else:
-                    #                 correct = False
-                    #                 break
-                    #     if correct:
-                    #
-                    #         break
-                    #     else:
-                    #         continue
+        for class_id in range(len(centers)):
+            print("drawing class " + str(class_id) + " points")
+            corcnt = 0
+            for center_id in range(len(centers[class_id])):
+                for k in range(self.args.N):
+                    pt = self.generate_point_inner(self.args.R, centers[class_id][center_id])
+                    correct = True
+                    crossing = False
+                    for cl_id in range(self.args.classes_cnt):
+                        if not correct:
+                            break
+                        for ce_id in range(self.args.centers):
+                            if cl_id == class_id:
+                                continue
+                            dst = distance.euclidean(pt, centers[cl_id][ce_id])
+                            a,b = class_id, cl_id
+                            if a > b:
+                                a,b = b,a
+                            if (dst < self.args.R and (a, b) not in cross and class_id == a) or (dst < self.args.R and (a, b) in cross) or dst >= self.args.R:
+                                if dst < self.args.R and (a,b) in cross:
+                                    crossing = True
+                            else:
+                                correct = False
+                                break
+                    if correct and crossing and (corcnt < int(self.args.rate * self.args.N * len(centers[class_id]))):
+                        corcnt += 1
+                        pts[class_id].append(pt)
+                        continue
+                    if correct and not crossing:
+                        pts[class_id].append(pt)
 
         for i in range(len(pts)):
            #print(pts[i])
@@ -202,6 +222,8 @@ if __name__ == "__main__":
                         help='distance between core points of the class')
     parser.add_argument('--centers', type=int,
                         help='quantity of core points')
+    parser.add_argument('--rate', type=float,
+                        help='float in [0 : 1] spicifying maxumum proportion of element of a single class crossing another class')
 
     args = parser.parse_args()
     if True or check_args(args):
