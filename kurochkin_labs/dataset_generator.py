@@ -177,7 +177,9 @@ class generator:
                         corcnt += 1
                         pts[class_id].append(pt)
                         continue
-                    if correct and not crossing:
+                    if crossing:
+                        continue
+                    if correct:
                         pts[class_id].append(pt)
 
         for i in range(len(pts)):
