@@ -167,12 +167,20 @@ class generator:
                             a,b = class_id, cl_id
                             if a > b:
                                 a,b = b,a
-                            if (dst < self.args.R and (a, b) not in cross and class_id == a) or (dst < self.args.R and (a, b) in cross) or dst >= self.args.R:
+                            if (dst < self.args.R and (a, b) not in cross and class_id == a) \
+                                    or (dst < self.args.R and (a, b) in cross) \
+                                    or dst >= self.args.R:
                                 if dst < self.args.R and (a,b) in cross:
                                     crossing = True
                             else:
                                 correct = False
                                 break
+                            if correct and class_id == b and not (a,b) in cross and  dst >= self.args.R \
+                                and dst <= self.args.R + self.args.delta:
+                                correct = False
+                                break
+
+
                     if correct and crossing and (corcnt < int(self.args.rate * self.args.N * len(centers[class_id]))):
                         corcnt += 1
                         pts[class_id].append(pt)
@@ -204,7 +212,8 @@ def check_args(args):
            and args.dist is not None \
            and args.step is not None \
            and args.centers is not None \
-           and args.R is not None
+           and args.R is not None \
+           and args.delta is not None
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Dataset generator for Neural Networks course in MISIS')
@@ -226,6 +235,8 @@ if __name__ == "__main__":
                         help='quantity of core points')
     parser.add_argument('--rate', type=float,
                         help='float in [0 : 1] spicifying maxumum proportion of element of a single class crossing another class')
+    parser.add_argument('--delta', type=float,
+                        help='delta')
 
     args = parser.parse_args()
     if True or check_args(args):
@@ -237,5 +248,4 @@ if __name__ == "__main__":
 
 
 #run command
-#  python dataset_generator.py --N 1000 --dims 2 --classes_cnt 2 --dist 1.5 --R 1.0 --crossings 0 --step 0.5 --centers 5
-#  py dataset_generator.py --N 100 --dims 2 --classes_cnt 10 --dist 7.0 --R 0.25 --crossings 0 --step 0.5 --centers 50
+# py dataset_generator.py --N 1000 --dims 2 --classes_cnt 10 --dist 2.0 --R 1.5 --crossings 10 --step 0.5 --centers 10 --rate 0.5 --delta 0.2
