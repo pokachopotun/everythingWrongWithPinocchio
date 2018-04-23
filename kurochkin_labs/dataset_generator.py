@@ -39,7 +39,7 @@ class generator:
                     b = [x[1] for x in class_centers[i]]
                     plt.plot(a, b, '.')
                 plt.show()
-                exit()
+                exit(1)
             pt = self.generate_point_sphere(r, center)
             flag = 0
             for i in range(len(mass_centers)):
@@ -200,7 +200,7 @@ class generator:
         #     b = [x[1] for x in centers[i]]
         #     plt.plot(a, b, '.')
         plt.show()
-
+        return pts
 
 
 def check_args(args):
@@ -214,6 +214,17 @@ def check_args(args):
            and args.centers is not None \
            and args.R is not None \
            and args.delta is not None
+
+def call_generator(args):
+    if True or check_args(args):
+        gen = generator(args)
+        res = gen.generate_by_radius()
+        print('Generator finished successfully')
+        return res
+    else:
+        print("Generator Error: Some arguments are missing... Use  --help for description")
+        exit(1)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Dataset generator for Neural Networks course in MISIS')
@@ -237,14 +248,8 @@ if __name__ == "__main__":
                         help='float in [0 : 1] spicifying maxumum proportion of element of a single class crossing another class')
     parser.add_argument('--delta', type=float,
                         help='delta')
-
     args = parser.parse_args()
-    if True or check_args(args):
-        gen = generator(args)
-        gen.generate_by_radius()
-    else:
-        print("Error: Some arguments are missing... Use  --help for description")
-    print('program finished successfully')
+    call_generator(args)
 
 
 #run command
