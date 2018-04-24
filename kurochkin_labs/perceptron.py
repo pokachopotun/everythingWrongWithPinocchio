@@ -10,6 +10,19 @@ importlib.import_module("dataset_generator")
 
 import dataset_generator as datagen
 
+def act(x):
+    return relu(x)
+
+def act_der(x):
+    return relu_derivative(x)
+
+def relu(x):
+    return math.log(1 + math.exp(x))
+
+def relu_derivative(x):
+    return sigma(x)
+
+
 def sigma(x):
     return 1.0 / (1.0 + math.exp(-x))
 
@@ -36,6 +49,10 @@ class Perceptron:
         for sz in self.layer_size:
             self.a.append(np.random.rand(sz))
 
+        self.a_der = list()
+        for sz in self.layer_size:
+            self.a_der.append(np.random.rand(sz))
+
         # initialize summation functions
         # print("initialize summations")
         self.z = list()
@@ -46,8 +63,7 @@ class Perceptron:
         #initialize weights
         # print("initialize weigths")
         self.w = list()
-        self.w.append(np.random.rand(1,1))
-        for i in range(1, self.layers_cnt):
+        for i in range(self.layers_cnt):
             self.w.append(np.random.rand(self.layer_size[i], self.layer_size[i - 1]))
             #self.w.append(np.full((self.layer_size[i], self.layer_size[i - 1]), 1.0/self.layer_size[i - 1]))
         #print(self.w)
@@ -55,11 +71,19 @@ class Perceptron:
     def inception(self, x):
         #print("inception")
         self.z[0] = np.array(x[0])
-        self.a[0] = np.array(x[0])
-        for i in range(1, self.layers_cnt):
+        for j in range(self.layer_size[0]):
+            self.a[0][j] = act(self.z[0][j])
+            self.a_der[0][j] = act_der(self.z[0][j])
+        for i in range(1, self.layers_cnt - 1):
             self.z[i] = np.add( self.w[i].dot(self.a[i - 1]), self.b[i])
             for j in range(self.layer_size[i]):
-                self.a[i][j] = sigma(self.z[i][j])
+                self.a[i][j] = act(self.z[i][j])
+                self.a_der[i][j] = act_der(self.z[i][j])
+
+        self.z[-1] = np.add(self.w[-1].dot(self.a[-2]), self.b[-1])
+        for j in range(self.layer_size[-1]):
+            self.a[-1][j] = sigma(self.z[-1][j])
+            self.a_der[-1][j] = sigma_derivative(self.z[-1][j])
         return 0
 
     def accuracy(self, batch):
@@ -102,10 +126,6 @@ def train(p, train_batch, test_batch, num_epochs = 30, learning_rate = 1.0, mini
             for i in range(0, p.layers_cnt):
                 dw.append(np.full((p.layer_size[i], p.layer_size[i - 1]), fill_value=0.0, dtype=np.float64))
             mini_batch = list()
-            # delta = list()
-            # for sz in p.layer_size:
-            #     delta.append(np.zeros(sz))
-
 
             for elem_id in range(minibatch_size):
                 if global_id < 0:
@@ -126,23 +146,25 @@ def train(p, train_batch, test_batch, num_epochs = 30, learning_rate = 1.0, mini
                 for sz in p.layer_size:
                     delta.append(np.zeros(sz))
                 p.inception(mini_batch[elem_id])
-                err = np.subtract(p.a[-1] , y)
-                delta[-1] = np.multiply( np.multiply( np.subtract(p.a[-1] , y), p.a[-1]), np.subtract(np.ones(p.layer_size[-1], dtype=np.float64), p.a[-1]))
-                #delta[-1] = np.multiply(1.0/cur_n_samples, delta[-1])
+                # err = np.subtract(p.a[-1], y)
+                # delta[-1] = np.multiply( np.multiply( np.subtract(p.a[-1], y), p.a[-1]), np.subtract(np.ones(p.layer_size[-1], dtype=np.float64), p.a[-1]))
+                delta[-1] = np.multiply(np.subtract(p.a[-1], y), p.a_der[-1])
+
                 for layer_id in range(p.layers_cnt - 1, 0, -1):
                     left = p.w[layer_id].T.dot(delta[layer_id])
-                    right = np.multiply( p.a[layer_id-1], np.subtract(np.ones(p.layer_size[layer_id-1]), p.a[layer_id-1]))
+                    # right = np.multiply(p.a[layer_id-1], np.subtract(np.ones(p.layer_size[layer_id-1], dtype=np.float64), p.a[layer_id-1]))
+                    right = p.a_der[layer_id - 1]
                     delta[layer_id - 1] = np.multiply(left, right)
                 for layer_id in range(1, len(db)):
-                    db[layer_id] = np.multiply(-learning_rate/float(cur_n_samples), delta[layer_id] )
+                    db[layer_id] = np.add(db[layer_id], delta[layer_id])
                 for layer_id in range(1, len(dw)):
-                     for x_i in range(len(p.a[layer_id - 1])):
+                    for x_i in range(len(p.a[layer_id - 1])):
                         for y_i in range(len(delta[layer_id])):
-                            dw[layer_id][y_i][x_i] = -learning_rate/float(cur_n_samples) * p.a[layer_id - 1][x_i] * delta[layer_id][y_i]
+                            dw[layer_id][y_i][x_i] += p.a[layer_id - 1][x_i] * delta[layer_id][y_i]
 
             for layer_id in range(1, len(dw)):
-                p.b[layer_id] = np.add(p.b[layer_id], db[layer_id])
-                p.w[layer_id] = np.add(p.w[layer_id], dw[layer_id])
+                p.b[layer_id] = np.add(p.b[layer_id], np.multiply(-learning_rate/float(cur_n_samples), db[layer_id]))
+                p.w[layer_id] = np.add(p.w[layer_id], np.multiply(-learning_rate/float(cur_n_samples), dw[layer_id]))
 
         train_loss = p.batch_loss(train_batch)
         test_loss = p.batch_loss(test_batch)
@@ -241,7 +263,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     args.test_perc = 0.2
 
-    layer_size = np.array([args.dims, 2, 2, args.classes_cnt])
+    layer_size = np.array([args.dims, 3, 4, args.classes_cnt])
     p = Perceptron(layer_size)
     pts = datagen.call_generator(args)
     normed_pts = normalize_data(pts)
@@ -255,9 +277,9 @@ if __name__ == "__main__":
     #     print("initial TEST accuracy", p.accuracy(test_batch))
     # else:
     #     print("initial TRAIN accuracy", p.accuracy(train_batch))
-    num_epochs = 100
-    mb_size =  1 #int(0.01 * len(train_batch))
-    v_loss = train(p, train_batch, test_batch, num_epochs, 1.0, mb_size)
+    num_epochs = 10000
+    mb_size = 25 #int(0.01 * len(train_batch))
+    v_loss = train(p, train_batch, test_batch, num_epochs, 0.01, mb_size)
 
     plot_decision_boundary(p, train_batch)
 
