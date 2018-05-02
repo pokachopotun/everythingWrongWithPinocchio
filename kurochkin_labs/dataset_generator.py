@@ -43,16 +43,14 @@ class generator:
             pt = self.generate_point_sphere(r, center)
             flag = 0
             for i in range(len(mass_centers)):
-                if cl == i:
-                    continue
                 p = mass_centers[i]
                 dst = distance.euclidean(p, pt)
                 if dst < d:
                     flag += 1
             if flag <= 0: # 1 + int(0.1 * len(class_centers)):
                 return pt
-
-
+            else:
+                return None
 
 
     def generate_point_inner(self, r, center = None):
@@ -74,7 +72,7 @@ class generator:
                 cm[i] += e[i]
         for i in range(self.args.dims):
             cm[i] /= self.args.dims
-        return cm
+        return centers[0]
 
     def generate_centers(self):
         print("generating centers")
@@ -84,16 +82,20 @@ class generator:
             if i == 0:
                 ct = self.try_generate_point_sphere(self.args.dist, self.args.dist, i, mass_centers, centers)
             else:
-                r_cl = random.randint(0, i - 1)
-                r_cl_c = random.randint(3 * int((self.args.centers - 1)/4), self.args.centers - 1)
-                ct = self.try_generate_point_sphere(self.args.dist, self.args.dist, i, mass_centers, centers, centers[r_cl][r_cl_c])
+                while True:
+                    r_cl = random.randint(0, i - 1)
+                    r_cl_c = random.randint(3 * int((self.args.centers - 1) / 4), self.args.centers - 1)
+                    ct = self.try_generate_point_sphere(self.args.dist, self.args.dist, i, mass_centers, centers, centers[r_cl][r_cl_c])
+                    if ct is not None:
+                        break
+
             centers[i].append(ct)
             mass_centers[i] = self.calc_mass_center(centers[i])
-            for j in range(1, self.args.centers):
-                r_cl_c = random.randint(3 * int((len(centers[i]) - 1)/4), len(centers[i]) - 1)
-                pt = self.try_generate_point_sphere(self.args.step, self.args.dist, i, mass_centers, centers, centers[i][r_cl_c])
-                centers[i].append(pt)
-                mass_centers[i] = self.calc_mass_center(centers[i])
+            # for j in range(1, self.args.centers):
+            #     r_cl_c = random.randint(3 * int((len(centers[i]) - 1)/4), len(centers[i]) - 1)
+            #     pt = self.try_generate_point_sphere(self.args.step, self.args.dist, i, mass_centers, centers, centers[i][r_cl_c])
+            #     centers[i].append(pt)
+            #     mass_centers[i] = self.calc_mass_center(centers[i])
         return centers
 
     def generate_crossings(self, cnt):
