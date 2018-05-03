@@ -103,16 +103,14 @@ class generator:
         cross = set()
         vars = list()
         for i in range(self.args.classes_cnt):
-            for j in range(self.args.classes_cnt):
+            for j in range(i + 1, self.args.classes_cnt):
                 a = i
                 b = j
-                if a >= b:
-                    continue
                 if a > b:
                     a, b = b, a
                 vars.append((a,b))
-
-        while len(cross) < cnt and len(cross) < len(vars):
+        orig_len_vars = len(vars)
+        while len(cross) < cnt and len(cross) < orig_len_vars:
             if len(cross) >= cnt:
                 return cross
             random.shuffle(vars)

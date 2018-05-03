@@ -11,10 +11,10 @@ importlib.import_module("dataset_generator")
 import dataset_generator as datagen
 
 def act(x):
-    return relu(x)
+    return sigma(x)
 
 def act_der(x):
-    return relu_derivative(x)
+    return sigma_derivative(x)
 
 def relu(x):
     return math.log(1 + math.exp(x))
@@ -46,21 +46,20 @@ class Perceptron:
         for sz in self.layer_size:
             self.b.append(np.random.rand(sz))
 
-        # initialize activations
-        # print("initialize activations")
-        self.a = list()
-        for sz in self.layer_size:
-            self.a.append(np.random.rand(sz))
-
-        self.a_der = list()
-        for sz in self.layer_size:
-            self.a_der.append(np.random.rand(sz))
-
         # initialize summation functions
         # print("initialize summations")
+
         self.z = list()
+        self.a = list()
+        self.a_der = list()
         for sz in self.layer_size:
             self.z.append(np.random.rand(sz))
+            # for j in range(sz):
+            #     tmp_1[j] = act(self.z[-1][j])
+            #     tmp_2[j] = act_der(self.z[-1][j])
+            self.a.append(np.random.rand(sz))
+            self.a_der.append(np.random.rand(sz))
+
 
 
         #initialize weights
@@ -117,12 +116,25 @@ class Perceptron:
 def train(p, train_batch, test_batch, num_epochs = 30, learning_rate = 1.0, minibatch_size = 1):
     p_best = copy(p)
     loss_best = p.batch_loss(test_batch)
+    acc_test_best = p.accuracy(test_batch)
     n_samples = len(train_batch)
     epoch_best = -1
     v_loss = list()
+    dd_list = [int(7 * num_epochs / 10)]
     for epoch_id in range(num_epochs):
         shuffle(train_batch)
         global_id = len(train_batch) - 1
+        # if epoch_id == int(num_epochs/4):
+        #     learning_rate *= 2 / 3
+        for dd in range(2, 9, 2):
+            if epoch_id == int(num_epochs * (1 - 1 / dd)):
+                learning_rate *= 0.5
+        # dd_cnt = 10
+        # for dd in range(1, dd_cnt):
+        #     if epoch_id == int(num_epochs * dd/dd_cnt):
+        #         learning_rate *= 0.5
+        # if epoch_id in dd_list:
+        #     learning_rate *= 0.25
         while(True):
             db = list()
             for sz in p.layer_size:
@@ -166,23 +178,36 @@ def train(p, train_batch, test_batch, num_epochs = 30, learning_rate = 1.0, mini
                     for x_i in range(len(p.a[layer_id - 1])):
                         for y_i in range(len(delta[layer_id])):
                             dw[layer_id][y_i][x_i] += p.a[layer_id - 1][x_i] * delta[layer_id][y_i]
-
+            # print(dw)
             for layer_id in range(1, len(dw)):
                 p.b[layer_id] = np.add(p.b[layer_id], np.multiply(-learning_rate/float(cur_n_samples), db[layer_id]))
                 p.w[layer_id] = np.add(p.w[layer_id], np.multiply(-learning_rate/float(cur_n_samples), dw[layer_id]))
 
         train_loss = p.batch_loss(train_batch)
         test_loss = p.batch_loss(test_batch)
-        if test_loss < loss_best:
+        acc_train = p.accuracy(train_batch)
+        acc_test = p.accuracy(test_batch)
+
+        if acc_test >= acc_test_best:
             p_best = copy(p)
             epoch_best = epoch_id
+            acc_test_best = acc_test
             loss_best = test_loss
-        acc = p.accuracy(train_batch)
-        v_loss.append((acc, train_loss, test_loss))
-        print("epoch_id", epoch_id, "TRAIN acc:", acc)
-        if len(test_batch) > 0:
-            acc = p.accuracy(test_batch)
-            print("epoch_id", epoch_id, "TEST acc:", acc)
+
+
+        # if acc_test == 1.0:
+        #     import pickle
+        #     name = 'ep' + str(epoch_id) + 'acctst' + str(acc_test) + 'acctrain' + str(acc_train) + 'loss' + str(train_loss) + ".p"
+        #     pickle.dump(p, open(name, "wb"))
+        # if acc_test == 1.0 and acc_train == 1.0:
+        #     import pickle
+        #     name = 'BINGOep' + str(epoch_id) + 'acctst' + str(acc_test) + 'acctrain' + str(acc_train) + 'loss' + str(train_loss) + ".p"
+        #     pickle.dump(p, open(name, "wb"))
+        #     print('BINGO')
+            # exit()
+        v_loss.append((acc_train, train_loss, test_loss, acc_test))
+        print("epoch_id", epoch_id, "TRAIN acc:", acc_train)
+        print("epoch_id", epoch_id, "TEST acc:", acc_test)
         print("epoch_id", epoch_id, "TRAIN loss:", train_loss)
         print("epoch_id", epoch_id, "TEST loss:", test_loss)
         #print(p.w)
@@ -199,6 +224,7 @@ def get_test(pts, args):
     test = [list() for i in range(len(pts))]
     for i in range(len(pts)):
         total_cnt = len(pts[i])
+        shuffle(pts[i])
         test_cnt = int(args.test_perc * total_cnt)
         for j in range(test_cnt):
             test[i].append(pts[i].pop())
@@ -206,7 +232,7 @@ def get_test(pts, args):
 
 def normalize_data(pts):
     normed_pts = [list() for _ in range(len(pts))]
-    mean  = np.zeros((2,), dtype=np.float64)
+    mean  = np.zeros((len(pts[0][0]),), dtype=np.float64)
     cnt = 0
     for i in range(len(pts)):
         for pt in pts[i]:
@@ -224,6 +250,7 @@ def normalize_data(pts):
     return normed_pts
 
 def plot_decision_boundary(p, train, pts):
+    # print(len(pts))
     # Set min and max values and give it some padding
     train_dots = np.asarray([x[0] for x in train])
     gt = np.asarray([x[1] for x in train])
@@ -238,17 +265,32 @@ def plot_decision_boundary(p, train, pts):
             elem = ([xx[i][j], yy[i][j]], -1)
             p.inception(elem)
             ans = p.a[-1].argmax()
-            z.append(ans)
+            z.append(ans + 2)
+    # print(c)
     z = np.asarray(z).reshape(xx.shape)
+    # colors = np.zeros( (z.shape[0], z.shape[1], 3), dtype=np.float64)
+    # for i in range(len(xx)):
+    #     for j in range(len(xx[i])):
+    #         colors[i][j] = [z[i][j]/20, 0.0, 0.0]
     # Plot the contour and training examples
-    plt.spectral()
-    plt.contourf(xx, yy, z)
+    # plt.spectral()
+    # colors = cm.rainbow(np.linspace(0, 1, len(pts)))
+    # from matplotlib.colors import LinearSegmentedColormap
+    # my_cm = LinearSegmentedColormap.from_list(
+    #     'mymap', colors, N=len(pts))
+    plt.contourf(xx, yy, z, levels = range(len(pts) + 4))
+    # plt.contour(xx, yy, z, len(pts) + 4, colors = 'r')
     for i in range(len(pts)):
         #train_dots = np.asarray([x[0] for x in train])
         tmp_x = np.asarray([x[0] for x in pts[i]])
         tmp_y = np.asarray([x[1] for x in pts[i]])
         plt.scatter(tmp_x, tmp_y)
     plt.show()
+
+def load_iris():
+    from sklearn import datasets
+    iris = datasets.load_iris()
+    return iris
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Dataset generator for Neural Networks course in MISIS')
@@ -274,17 +316,43 @@ if __name__ == "__main__":
                         help='delta')
 
     args = parser.parse_args()
-    args.test_perc = 0.2
+    args.test_perc = 0.8
+
+    do_iris = False
+    if do_iris:
+        args.classes_cnt = 4
+        args.dims = 4
+
+
+
 
     layer_size = np.array([args.dims, 20, args.classes_cnt])
-    p = Perceptron(layer_size)
-    # pts = datagen.call_generator(args)
-    import pickle
-    # pickle.dump(pts, open("saved_pts_1.my", "wb"))
-    # exit()
-    pts = pickle.load(open("saved_pts_1.my", "rb"))
-    normed_pts = normalize_data(pts)
 
+
+
+    import pickle
+
+    p = Perceptron(layer_size)
+    # p = pickle.load(open("p1.p", "rb"))
+
+    if False:
+        pts = datagen.call_generator(args)
+        pickle.dump(pts, open("overfit.my", "wb"))
+        exit()
+    if do_iris:
+        iris = load_iris()
+        iris_data = iris['data']
+        iris_cl = iris['target']
+        iris_names = iris['target_names']
+        pts = [list() for _ in range(args.classes_cnt)]
+        pr = list(zip(iris_data, iris_cl))
+        shuffle(pr)
+        for dd, cl in pr:
+            pts[cl].append(dd)
+    else:
+        pts = pickle.load(open("overfit.my", "rb"))
+    # pickle.dump(pts, open("iris_best.my", "wb"))
+    normed_pts = normalize_data(pts)
     #normed_pts = pts
 
     test_pts = get_test(normed_pts, args)
@@ -292,46 +360,56 @@ if __name__ == "__main__":
     train_batch = convert_gen_to_batch(normed_pts)
     test_batch = convert_gen_to_batch(test_pts)
 
+    # acc = p.accuracy(test_batch)
+    # print(acc)
+    # exit()
     # plot_decision_boundary(p, train_batch, normed_pts)
     # exit()
     # if len(test_batch) > 0:
     #     print("initial TEST accuracy", p.accuracy(test_batch))
     # else:
     #     print("initial TRAIN accuracy", p.accuracy(train_batch))
-    num_epochs = 100
-    mb_size = 10  #int(0.01 * len(train_batch))
-    learning_rate  = 0.01
+    num_epochs = 1000
+    mb_size = 3  #int(0.01 * len(train_batch))
+    learning_rate  = 1.0
     v_loss, p_best, epoch_best = train(p, train_batch, test_batch, num_epochs, learning_rate, mb_size)
+    pickle.dump(p_best, open("overfitting.p", "wb"))
+    # p_best = p
     print("best epoch", epoch_best, "best loss", v_loss[epoch_best][2], "accuracy", v_loss[epoch_best][0])
+    # p_best = p
+
+    # print(p.accuracy(train_batch))
+    # print(p.accuracy(test_batch))
     plot_decision_boundary(p_best, train_batch, normed_pts)
+    plot_decision_boundary(p_best, test_batch, test_pts)
 
     ep_x = list(range(1, num_epochs + 1))
-    plt.plot(ep_x, [v_loss[i][0] for i in range(len(v_loss))], label = 'accuracy')
+    plt.plot(ep_x, [v_loss[i][0] for i in range(len(v_loss))], label='accuracy_train')
     plt.plot(ep_x, [v_loss[i][1] for i in range(len(v_loss))], label='train_loss')
     plt.plot(ep_x, [v_loss[i][2] for i in range(len(v_loss))], label='test_loss')
-    plt.scatter(epoch_best, v_loss[epoch_best][2], label='test loss best', c = 'r')
+    plt.plot(ep_x, [v_loss[i][3] for i in range(len(v_loss))], label='accuracy_test')
+    # plt.scatter(epoch_best, v_loss[epoch_best][2], label='test loss best', c = 'r')
     plt.legend()
     total = len(train_batch) + len(test_batch)
-    #best = (p, p.accuracy(test_batch), 1.0, mb_size)
-    #print(best)
+    best = (p, p.accuracy(test_batch), 1.0, mb_size)
+    print(best)
     plt.show()
     exit()
-    for i in range(1):
-        for j in range(2, 10):
-            p = Perceptron(layer_size)
-            lr = 1.0
-            mb_size =  int( total / j )
-            train(p, train_batch, test_batch, 500, lr, mb_size)
-            acc = p.accuracy(test_batch)
-            print(lr, mb_size, acc)
-            if acc > best[1]:
-                best = (p, acc, lr, mb_size)
-    print(best)
+    # for i in range(1):
+    #     for j in range(2, 10):
+    #         p = Perceptron(layer_size)
+    #         lr = 1.0
+    #         mb_size =  int( total / j )
+    #         train(p, train_batch, test_batch, 500, lr, mb_size)
+    #         acc = p.accuracy(test_batch)
+    #         print(lr, mb_size, acc)
+    #         if acc > best[1]:
+    #             best = (p, acc, lr, mb_size)
+    # print(best)
 
 
 
-#py perceptron.py --N 100 --dims 2 --classes_cnt 5 --dist 1.5 --R 1.0 --crossings 0 --step 0.5 --centers 1 --rate 0.0 --delta 0.2
+#py perceptron.py --N 100 --dims 2 --classes_cnt 5 --dist 1.3 --R 1.0 --crossings 0 --step 0.5 --centers 1 --rate 0.0 --delta 0.2
 # 1) линейно рахделимые 1 слой подобрать 20 классов
-# 2) линейно неразделимые 20-30% добавить критерий лучшей позиции по тесту и лучших параметров датасет фишера и на двух слоях
-# минимум нейронов получить 100 % точности.
+# 2) датасет фишера и на двух слоях минимум нейронов получить 100 % точности.
 # 3) продемонстрировать переобучение и недообучение.
