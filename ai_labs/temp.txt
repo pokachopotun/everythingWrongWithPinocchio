@@ -1,0 +1,49 @@
+('&&',
+('&&',
+('predicate', 'D', ['x']),
+('||', ('predicate', 'C', ['x']), ('predicate', 'A', ['x']))),
+
+('predicate', 'B', ['x']))
+
+
+
+('!',
+
+('&&', ('&&', ('predicate', 'D', ['x']),
+('||', ('predicate', 'C', ['x']), ('predicate', 'A', ['x']))),
+('predicate', 'B', ['x'])),
+
+None)
+
+
+A("x", "y", z), B("x"), C("y")d
+forall(x, y, z : B(x, y, z)), exists(x, y, z : B(x, y, z)), exists(x, y, z : B(x, y, z)) -> Q(x), B(y),  C(z)
+? A(x) || B(x) && C(x)
+? D(x) && (C(x) || A(x)) && !((B(x)))
+
+? (P(x) && (forall(y : Q(x,y) || !(exists(y : R(y, x))))))
+
+
+
+P("a"), P("b"), P("c"), P("d")
+Q("a", "b")
+Q("b", "c")
+Q("d", "a")
+Q("a", "a")
+Q(x,y) -> Q(y,x)
+Q(x,x) -> R(x)
+? R("a")
+? Q("b", "a")
+
+P("y", "x")
+exists(x : P("y", x)) -> R(x)
+? R("y")
+? R("x")
+
+Q("a", "b"), P("a")
+P("a") && exists(x, y : Q(x,y)) -> B(y, x)
+? B("b", "a")
+
+P("a"), P("b"), P("c"), P("d"), C("e")
+exists(x : C(x)) -> P(x)
+? forall(x : P(x))

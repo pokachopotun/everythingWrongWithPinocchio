@@ -1,0 +1,6 @@
+P("x"), Q("x", "y")
+? P(x)
+? !( exists(y, x : R(y, x )))
+? forall(y,x : Q(x, y))
+? forall(y : Q(x, y) || !( exists(y : R(y, x ))))
+? (P(x) && ( forall(y : Q(x, y) || !( exists(y : R(y, x ))))))
