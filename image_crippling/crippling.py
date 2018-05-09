@@ -52,7 +52,7 @@ def get_mask_way(img, inverse = False):
 
 def get_mask_canny(img1):
     x,y,z = img1.shape
-    edges = cv2.Canny(img1, 100, 100)
+    edges = cv2.Canny(img1, 25, 225)
     cv2.floodFill(edges, None, (int(x / 2), int(y/2)), 255)
     return edges == 255
     # cv2.imshow('canny', edges)
@@ -62,7 +62,10 @@ def get_mask_canny(img1):
 
 def get_mask_binarize(img1):
     im = img1.copy()
-    ret, thresh1 = cv2.threshold(im, 127, 255, cv2.THRESH_BINARY)
+    x,y,z = im.shape
+    gray = np.zeros((x,y), dtype=np.uint8)
+    gray = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
+    ret, thresh1 = cv2.threshold(gray, 127, 255, cv2.THRESH_BINARY)
     return thresh1 == 255
 
 
@@ -80,24 +83,31 @@ def combine_2_imgs_path(img1_path, img2_path, mode = 'canny'):
     img = cv2.imread(img1_path)
     img2 = cv2.imread(img2_path)
     mask = get_mask[mode](img)
-    return combine_2_imgs(img, img2, mask)
+    return combine_2_imgs(img, img2, mask), mask
 
 if __name__ == "__main__":
 
+    mode = 'binarize'
     dataset_folder = 'D:/rtsd/rtsd-r3/rtsd_classy_ok/train/'
-    output_folder = 'D:/rtsd/rtsd-r3/rtsd_classy_ok/cripples/'
+    output_folder = 'D:/rtsd/rtsd-r3/rtsd_classy_ok/new_cripples_' + mode
     if os.path.exists(output_folder):
         shutil.rmtree(output_folder)
     os.makedirs(output_folder)
     cl_list = os.listdir(dataset_folder)
+
     for i in range(len(cl_list)):
         for j in range(i + 1, len(cl_list)):
             folder1 = os.path.join(dataset_folder, cl_list[i])
             folder2 = os.path.join(dataset_folder, cl_list[j])
             name1 = random.sample(os.listdir(folder1), 1)[0]
             name2 = random.sample(os.listdir(folder2), 1)[0]
-            res = combine_2_imgs_path(os.path.join(folder1, name1), os.path.join(folder2, name2), 'canny')
+            res, mask = combine_2_imgs_path(os.path.join(folder1, name1), os.path.join(folder2, name2), mode)
+            im1 = cv2.imread(os.path.join(folder1, name1))
+            im2 = cv2.imread(os.path.join(folder2, name2))
             cv2.imwrite(os.path.join(output_folder, str(i * 10 + j) + '.png'), res)
+            cv2.imwrite(os.path.join(output_folder, str(i * 10 + j) + '_img1.png'), im1)
+            cv2.imwrite(os.path.join(output_folder, str(i * 10 + j) + '_img2.png'), im2)
+            cv2.imwrite(os.path.join(output_folder, str(i * 10 + j) + '_mask.png'), mask * 255)
 
 
 
