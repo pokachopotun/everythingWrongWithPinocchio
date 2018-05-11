@@ -37,9 +37,11 @@ def sem(pts):
     for i in range(len(R)):
         R[i] = np.eye(q, q, dtype=np.float64)
 
+
+    # weights are the same
     W = np.ones((k, ), dtype=np.float64)
     W = np.divide(W, k)
-    eps = 1e-3
+    eps = 1e-6
     dst = np.zeros((n, k), dtype=np.float64)
     p = np.zeros_like(dst)
     llh = 0.0
