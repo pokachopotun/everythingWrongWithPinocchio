@@ -1,0 +1,74 @@
+#shapes
+exists(x : type(x, "megaminx")) -> shape(x, "dodecahedron")
+exists(x : type(x, "cube")) -> shape(x, "cube")
+exists(x : type(x, "special")) -> shape(x, "special")
+exists(x : type(x, "skewb")) -> shape(x, "cube")
+exists(x : type(x, "jewel")) -> shape(x, "jewel")
+exists(x : type(x, "gem")) -> shape(x, "gem")
+exists(x : type(x, "pyramorphix")) -> shape(x, "pyramid")
+exists(x : type(x, "pyraminx")) -> shape(x, "pyramid")
+
+#macrotype
+exists(x : size(x, "3")) -> macrotype(x, "rubic")
+exists(x, y : size(x, y) && more(y, "3")) -> macrotype(x, "big")
+exists(x, y : size(x, y) && less(y, "3")) -> macrotype(x, "small")
+
+#oddity
+exists(x : size(x, "3")) -> odd(x)
+exists(x : size(x, "5")) -> odd(x)
+exists(x : size(x, "7")) -> odd(x)
+exists(x : size(x, "9")) -> odd(x)
+exists(x : size(x, "11")) -> odd(x)
+exists(x : size(x, "13")) -> odd(x)
+exists(x : size(x, "2")) -> even(x)
+exists(x : size(x, "4")) -> even(x)
+exists(x : size(x, "6")) -> even(x)
+exists(x : size(x, "8")) -> even(x)
+exists(x : size(x, "10")) -> even(x)
+
+#shapeshifting
+exists(x : type(x, "pyramorphix")) -> shapeshifting(x)
+exists(x : type(x, "mirror")) -> shapeshifting(x)
+
+#solving
+exists(x : shapeshifting(x)) -> solving(x, "morphix")
+exists(x : type(x, "skewb")) -> solving(x, "skewb")
+exists(x : type(x, "special")) -> solving(x, "special")
+exists(x : size(x, "3")) -> solving(x, "3x3")
+exists(x : size(x, "2")) -> solving(x, "2x2")
+exists(x : size(x, "4")) -> solving(x, "4x4")
+exists(x, y : even(x) && size(x,y) && more(x, "4")) -> solving(x, "bigeven")
+exists(x, y : odd(x) && size(x,y) && more(x, "4")) -> solving(x, "bigodd")
+
+
+
+#difficulty
+exists(x : macrotype(x, "rubic")) -> difficulty(x, "medium")
+exists(x, y : macrotype(x, "big") && size(x, y) && less(y, "8")) -> difficulty(x, "hard")
+exists(x, y : macrotype(x, "big") && size(x, y) && more(y, "7")) -> difficulty(x, "extrahard")
+exists(x : macrotype(x, "small")) -> difficulty(x, "easy")
+exists(x : macrotype(x, "special")) -> difficulty(x, "extrahard")
+
+
+#similarity
+#exists(x,y : similar(x, y)) -> similar(y, x)
+#exists(x,y,z : similar(x, y) && similar(y, z)) -> similar(x, z)
+#exists(x, y : macrotype(x, y)) -> similar(x, y)
+
+#competitive
+exists(x , y : type(x, "cube") && size(x , y) && less(y, "8") && (color(x, "black") || color(x, "white") || color(x, "stickered"))) -> wca(x)
+exists(x , y : type(x, "megaminx") && size(x , "3") && (color(x, "black") || color(x, "white") || color(x, "stickered"))) -> wca(x)
+exists(x : type(x, "skewb") && size(x , "2") && (color(x, "black") || color(x, "white") || color(x, "stickered"))) -> wca(x)
+exists(x : type(x, "skewb") && size(x , "2") && (color(x, "black") || color(x, "white") || color(x, "stickered"))) -> wca(x)
+exists(x : type(x, "pyraminx") && size(x , "3") && (color(x, "black") || color(x, "white") || color(x, "stickered"))) -> wca(x)
+
+#purpose
+exists(x, y : macrotype(x,y)) -> purpose(x, "practice")
+exists(x, y : manufacturer(x,y)) -> purpose(x, "practice")
+exists(x : manufacturer(x, "MoYu") && wca(x)) -> purpose(x, "competitive")
+exists(x : manufacturer(x, "MoYu")) -> purpose(x, "elite")
+exists(x : manufacturer(x, "ShengShou")) -> purpose(x, "practice")
+exists(x : manufacturer(x, "ShengShou")) -> purpose(x, "budget")
+exists(x : manufacturer(x, "Yuxin")) -> purpose(x, "budget")
+exists(x : manufacturer(x, "Yuxin")  && wca(x)) -> purpose(x, "competitive")
+exists(x : manufacturer(x, "Dayan")) -> purpose(x, "classic")

@@ -1,0 +1,2 @@
+? macrotype(x, "smallcube")
+? macrotype("Dayan_2x2x2", "smallcube")

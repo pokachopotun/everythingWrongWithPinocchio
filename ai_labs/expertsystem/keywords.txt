@@ -1,0 +1,9 @@
+shape pyramid dodecahedron cube jewel gem special
+difficulty easy medium hard extrahard
+macrotype small rubic big special
+purpose budget elite competitive practice classic
+even even
+odd odd
+size 2 3 4 5 6 7 8 9 10 11 13
+type pyraminx megaminx mirror cube skewb pyramorphix
+color black white pink blue transparent red colored
