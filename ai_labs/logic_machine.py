@@ -1,14 +1,17 @@
 import argparse
 from copy import copy
 from itertools import combinations_with_replacement as comb, product
+import weakref
 
 class logic_machine:
-    def __init__(self):
+    def __init__(self, task):
+        self.task = task
         print("init logic machine")
-        self.possible_values = set()
+        self.possible_values = dict()
         self.predicates = list()
         self.facts = list()
         self.rules = list()
+
 
     def check_predicate(self, pred):
         for elem in self.predicates:
@@ -57,24 +60,31 @@ class logic_machine:
         if not known_fact:
             self.facts.append(pred)
 
-        self.add_possible_values(pred.right)
+        self.add_possible_values(pred.left, pred.right)
         return not known_fact
 
-    def add_possible_values(self, vals):
-        for x in vals:
-            self.possible_values.add(x)
+    def add_possible_values(self, name, vals):
+        id = name
+        if not id in self.possible_values:
+            self.possible_values[id] = list()
+        while len(vals) > len(self.possible_values[id]):
+            self.possible_values[id].append(set())
+        for i in range(len(vals)):
+            x = vals[i]
+            self.possible_values[id][i].add(x)
 
 
     def add_multiple_predicates(self, predicates):
         for x in predicates:
-            if x.left not in task.parser.special_predicates:
+            if x.left not in self.task.parser.special_predicates:
                 self.add_predicate(x)
 
 
 
 
 class ExprParser:
-    def __init__(self):
+    def __init__(self, task):
+        self.task = task
         print("init ExprParser")
         self.special_predicates = ['forall', 'exists']
         self.special_symbols = ['!', '|', '&', '(', ')', ' ', ',', ':']
@@ -99,22 +109,22 @@ class ExprParser:
                 i += 1
                 continue
             if expr_str[i] == '|':
-                st.append(ExprTree('||', st.pop(), None))
+                st.append(ExprTree('||', st.pop(), None, self.task))
                 i += 2
                 continue
 
             if expr_str[i] == '&':
                 le, last, neg = self.get_next_le(expr_str, i)
                 if not neg:
-                    st.append(ExprTree('&&', st.pop(), self.parse_logic_expr(le)))
+                    st.append(ExprTree('&&', st.pop(), self.parse_logic_expr(le), self.task))
                 else:
-                    st.append(ExprTree('&&', st.pop(), ExprTree('!', self.parse_logic_expr(le), None)))
+                    st.append(ExprTree('&&', st.pop(), ExprTree('!', self.parse_logic_expr(le), None, self.task), self.task))
                 i = last + 1
                 continue
 
             if expr_str[i] == '!':
                 le, last, neg = self.get_next_le(expr_str, i)
-                st.append(ExprTree('!', self.parse_logic_expr(le), None))
+                st.append(ExprTree('!', self.parse_logic_expr(le), None, self.task))
                 i = last + 1
                 continue
             i += 1
@@ -190,9 +200,9 @@ class ExprParser:
             args = self.parse_special_predicate(s)
 
         if name in self.special_predicates:
-            return ExprTree(name, args[0], args[1])
+            return ExprTree(name, args[0], args[1], self.task)
         else:
-            return ExprTree('predicate', name, tuple(args))
+            return ExprTree('predicate', name, tuple(args), self.task)
 
     def parse_multiple_predicates(self, expr_str):
         pred_strings  = self.split_predicates(expr_str.strip())
@@ -215,24 +225,43 @@ class ExprParser:
 
 class task_type:
     def __init__(self):
-        self.lm = logic_machine()
-        self.parser = ExprParser()
+        self.lm = logic_machine(self)
+        self.parser = ExprParser(self)
+        self.rerun_process_rules = True
 
     def process_rules(self):
+        self.rerun_process_rules = False
         while(True):
             update = False
-            for rule in self.lm.rules:
+            print('current facts known', len(self.lm.facts))
+            for rule_id  in range(len(self.lm.rules)):
+                rule = self.lm.rules[rule_id]
+                print("processing rules", rule_id, 'out of', len(self.lm.rules))
+                params_pos = set()
                 params = set()
-                for ex in rule[0]:
-                    for v in ex.vars:
-                        params.add(v)
+                for part_id in range(len(rule)):
+                    for ex_id in range(len(rule[part_id])):
+                        ex = rule[0][ex_id]
+                        for v in ex.vars:
+                            params.add(v)
 
-                for ex in rule[1]:
-                    for v in ex.vars:
-                        params.add(v)
                 params = list(params)
-                pv = list(task.lm.possible_values)
-                combinations = list(product(pv, repeat=len(params)))
+                pval_lists = list()
+                for px in params:
+                    x_val_sets = list()
+                    for part_id in range(1):
+                        for ex_id in range(len(rule[part_id])):
+                            ex = rule[0][ex_id]
+                            for tpl in ex.predicate_vars[px]:
+                                pred_name, pos = tpl
+                                # try:
+                                x_val_sets.append(self.lm.possible_values[pred_name][pos])
+                                # except:
+                                #     continue
+                    pvx = set.union(*x_val_sets)
+                    pval_lists.append(list(pvx))
+                # pv = list(self.lm.possible_values)
+                combinations = list(product(*pval_lists))
                 for c in combinations:
                     flag = True
                     new_vals = dict()
@@ -251,7 +280,7 @@ class task_type:
                                     new_params[k] = new_vals[pred.right[k]]
                                 else:
                                     new_params[k] = pred.right[k]
-                            if self.lm.add_predicate(ExprTree('predicate', pred.left, tuple(new_params))):
+                            if self.lm.add_predicate(ExprTree('predicate', pred.left, tuple(new_params), self)):
                                 update = update or True
             if not update:
                 break
@@ -259,19 +288,29 @@ class task_type:
     def process_command(self, command_str):
         # print("Parsing command ", command_str)
         command_str = command_str.strip()
+        if command_str == 'process_rules':
+            self.process_rules()
+        if len(command_str) == 0:
+            return None
+        if command_str[0] == '#':
+            return None
         if command_str[0] == '?':
             query = self.parser.parse_query(command_str)
-            self.process_rules()
+            if self.rerun_process_rules:
+                self.process_rules()
             ok = query.check_query()
             # print("Possible values ", ok)
-            print(command_str, " is ", len(ok) > 0)
-            return
+            # print(command_str, " is ", len(ok) > 0)
+            return (len(ok) > 0, ok)
         if command_str.find("->") != -1:
+            self.rerun_process_rules = True
             rule = self.parser.parse_rule(command_str)
             self.lm.rules.append(rule)
-            return
+            return None
+        self.rerun_process_rules = True
         predicates = self.parser.parse_multiple_predicates(command_str)
         self.lm.add_multiple_predicates(predicates)
+        return None
 
     def run_console(self):
         print('interpreting commands from console. use exit() to quit')
@@ -283,7 +322,7 @@ class task_type:
 
 
 
-    def run_file(self, source_filepath):
+    def process_file(self, source_filepath):
         print("interpreting form source file", source_filepath)
         file = open(source_filepath)
         for line in [x.strip() for x in file.readlines()]:
@@ -292,12 +331,14 @@ class task_type:
             self.process_command(line)
 
 class ExprTree:
-    def __init__(self, op, left, right):
+    def __init__(self, op, left, right, task):
+        self.task = task
         #print("Init ExprTree Node")
         self.left = left
         self.right = right
         self.op = op
         self.vars = set()
+        self.predicate_vars = dict()
         self.get_vars(self)
         #print("Vars: ", self.vars)
 
@@ -329,8 +370,18 @@ class ExprTree:
 
     def logical_forall(self, params, expr, vals):
         flag = True
-        pv = list ( task.lm.possible_values )
-        combinations = list(product(pv, repeat=len(params)))
+        params = list(params)
+        pval_lists = list()
+        for px in params:
+            x_val_sets = list()
+            for tpl in expr.predicate_vars[px]:
+                pred_name, pos = tpl
+                x_val_sets.append(self.task.lm.possible_values[pred_name][pos])
+            pvx = set.union(*x_val_sets)
+            pval_lists.append(list(pvx))
+        # pv = list(self.lm.possible_values)
+        combinations = list(product(*pval_lists))
+        # combinations = list(product(pv, repeat=len(params)))
         for c in combinations:
             new_vals = copy(vals)
             for i in range(len(params)):
@@ -359,8 +410,8 @@ class ExprTree:
         for i in range(len(c_params)):
             if c_params[i][0] != '"':
                 c_params[i] = vals[c_params[i]]
-        fact = ExprTree('predicate', name, tuple(c_params))
-        return fact in task.lm.facts
+        fact = ExprTree('predicate', name, tuple(c_params), self.task)
+        return fact in self.task.lm.facts
 
     def logical_brackets(self, lhs, rhs, vals):
         raise ("Not implemented")
@@ -370,14 +421,26 @@ class ExprTree:
         params = list(expr.vars)
         ok = []
         flag = False
-        pv = list(task.lm.possible_values)
+
+        params = list(params)
+        pval_lists = list()
+        for px in params:
+            x_val_sets = list()
+            for tpl in expr.predicate_vars[px]:
+                pred_name, pos = tpl
+                x_val_sets.append(self.task.lm.possible_values[pred_name][pos])
+            pvx = set.union(*x_val_sets)
+            pval_lists.append(list(pvx))
+        # pv = list(self.lm.possible_values)
+        combinations = list(product(*pval_lists))
+        # pv = list(self.task.lm.possible_values)
         if len(params) == 0:
             res = self.get_result(expr, dict())
             flag = flag or res
             if res:
-                ok.append(pv)
+                ok.append(combinations)
             return ok
-        combinations = list(product(pv, repeat=len(params)))
+        # combinations = list(product(pv, repeat=len(params)))
 
 
         for c in combinations:
@@ -408,12 +471,16 @@ class ExprTree:
 
     def get_vars(self, expr):
         if expr.op == 'predicate':
-            for x in list(expr.right):
+            for xi in range(len(list(expr.right))):
+                x  = expr.right[xi]
                 if x[0] != '"':
                     self.vars.add(x)
+                    if not x in self.predicate_vars:
+                        self.predicate_vars[x] = set()
+                    self.predicate_vars[x].add((expr.left, xi))
             return
 
-        if expr.op in task.parser.special_predicates:
+        if expr.op in self.task.parser.special_predicates:
             self.get_vars(expr.right)
             return
 
@@ -431,7 +498,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     task = task_type()
     if(args.source_filepath is not None):
-        task.run_file(args.source_filepath)
+        task.process_file(args.source_filepath)
     else:
         task.run_console()
     print('program finished successfully')
