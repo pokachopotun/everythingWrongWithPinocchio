@@ -1,13 +1,21 @@
 import random
 from math import *
 
-bits_num = 31
 
-h = 1e-7
 
-lower_bound = -512.00001
-upper_bound = 512.00001
+lower_bound = -10.10001
+upper_bound = 1.10001
 
+bits_num = 30
+
+h = (upper_bound - lower_bound) / (1 << bits_num)
+
+print(h)
+
+def to_bits(x):
+    return int((x - lower_bound) / h)
+
+# exit()
 def check_arg(x):
     return x >= lower_bound and x <= upper_bound
 
@@ -22,10 +30,16 @@ def eggholder(x, y):
 def square_sum(x, y):
     return x * x + y * y
 
+def bukin(x, y):
+    if not ( check_arg(x) and check_arg(y) ):
+        return 1e18
+    return 100 * sqrt(abs(y - 0.01 * x * x)) + 0.01 * abs(x + 10)
+
 def target_function(pt):
     #return square_sum(pt[0], pt[1])
     #return  ackley(pt[0], pt[1])
-    return eggholder(pt[0], pt[1])
+    # return eggholder(pt[0], pt[1])
+    return bukin(pt[0], pt[1])
 
 def manhattan_distance(a, b):
     c = a ^ b
@@ -52,8 +66,9 @@ def combine_2(a, b):
     return aa, bb
 
 def combine(a, b):
-    c = a
-    d = b
+    from copy import copy
+    c = copy(a)
+    d = copy(b)
     lst = list()
     for i in range(bits_num):
         t = 1 << i
@@ -62,10 +77,14 @@ def combine(a, b):
         if l != r:
             lst.append(i)
     random.shuffle(lst)
-    lst = random.sample(lst, int( len(lst) / 2 ))
+    lst1 = random.sample(lst, int( len(lst) / 2 ))
     for i in lst:
         t = 1 << i
         c ^= t
+    for i in lst1:
+        if i in lst:
+            continue
+        t = 1 << i
         d ^= t
     return c, d
     # for i in range(bits_num):
@@ -92,14 +111,14 @@ def gray_decode(g):
 def mutate(a):
     ans = a
     cnt = 0
-    thresh = 0.2
+    thresh = 0.5
     for i in range(bits_num):
         r = random.uniform(0, 1)
         if r > thresh:
             continue
         cnt += 1
         ans ^= (1 << i)
-    #print("Mutation", cnt / bits_num)
+    # print("Mutation", cnt / bits_num)
     return ans
 
 def mutate_list(a):
@@ -121,9 +140,9 @@ def get_real_list(a):
     return ans
 
 if __name__ == "__main__":
-    n = 200
-    threshold = 2
-    n_iter = 10000
+    n = 40
+    threshold = 5
+    n_iter = 1000000
     val = int(1024 / h)
     cnt = 0
     # while val > 0:
@@ -166,15 +185,38 @@ if __name__ == "__main__":
             generation.append(c)
             generation.append(d)
 
+        # cur_len = len(generation)
+        # stp = 12 / (iter_id % 1000 + 1)
+        # stp1 = stp / 10
+        # for i in range(len(generation)):
+        #     mx, my = get_real(generation[i][0]), get_real(generation[i][1])
+        #     # step = 0.1
+        #
+        #     generation.append([to_bits(mx + stp * random.random()), to_bits(my + stp1 * random.random())])
+        #     generation.append([to_bits(mx + stp * random.random()), to_bits(my - stp1 * random.random())])
+        #     generation.append([to_bits(mx - stp * random.random()), to_bits(my + stp1 * random.random())])
+        #     generation.append([to_bits(mx - stp* random.random()), to_bits(my - stp1 * random.random())])
+        #
+        #     generation.append([to_bits(mx + stp * random.random()), to_bits(my)])
+        #     generation.append([to_bits(mx ), to_bits(my + stp1 * random.random())])
+        #     generation.append([to_bits(mx - stp * random.random()), to_bits(my)])
+        #     generation.append([to_bits(mx), to_bits(my - stp1 * random.random())])
+
+
         best = list()
         for i in range(len(generation)):
             pt = generation[i]
             best.append([target_function(get_real_list(pt)), generation[i]])
         best = sorted(best)
+        # tmp = str([get_real_list(x[1]) for x in best[:5]])
+
         print("iter", iter_id, "best", best[0][0], get_real_list(best[0][1]))
         new_generation = list()
-        new_generation.append(best[0][1])
-        for i in range(1, n):
+        best_sel_cnt = int(n/3)
+        for i in range(best_sel_cnt):
+            new_generation.append(best[i][1])
+        for i in range(best_sel_cnt, n):
             new_generation.append(mutate_list(best[i][1]))
+        cur_len = len(new_generation)
 
         generation = new_generation
