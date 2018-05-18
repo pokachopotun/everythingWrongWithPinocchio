@@ -85,6 +85,27 @@ def test_policy(policy, times = 100):
                 break
     print("Test", times ,"run avg", avg)
 
+def final_test_policy(policy, times = 10):
+    env = gym.make("Taxi-v2")
+    n_agents = times
+    avg = 0
+    for agent_id in range(n_agents):
+        state = env.reset()
+        env.render()
+        bal = 0
+        while True:
+            action = np.random.choice(range(6), p=policy[state])
+            state, reward, done, info = env.step(action)
+            bal += reward
+            env.render()
+            time.sleep(1)
+            if done:
+                # print("Test agent", agent_id, "balance", bal)
+                avg += bal/times
+                break
+    print("Final Test run and visualized", times, "times")
+    print("Final Test", times ,"run avg", avg)
+
 
 
 if __name__ == "__main__":
@@ -92,4 +113,4 @@ if __name__ == "__main__":
     n_states = 500
     policy = np.ones((n_states, n_actions)) / n_actions
     policy = train(policy)
-
+    final_test_policy(policy)
