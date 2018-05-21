@@ -21,15 +21,18 @@ def main():
     imgs_files = os.listdir(imgs_folderpath)
     imgs_cnt = int(len(imgs_files) / 2)
 
-    init_once = True
-    num_objects = 1
-    tracker = cv2.MultiTracker_create()
+    init_once = 0
+    num_objects = 2
+
 
     mask_rois = list()
     img_rois = list()
     contours = list()
+    tracking_colors = [0 for i in range(num_objects)]
 
-    for i in range(imgs_cnt):
+    init_step = 10
+
+    for frame_id in range(imgs_cnt):
 
 
         prev_mask_rois = copy(mask_rois)
@@ -40,10 +43,10 @@ def main():
         img_rois = list()
         contours = list()
 
-        img_name, mask_name = get_imgs_pair_by_id(imgs_files, i)
+        img_name, mask_name = get_imgs_pair_by_id(imgs_files, frame_id)
         img_path = os.path.join(imgs_folderpath, img_name)
         mask_path = os.path.join(imgs_folderpath, mask_name)
-        if not init_once:
+        if not frame_id % init_step == 0:
             prev_img = copy(img)
             prev_mask = copy(mask)
             prev_img_gray = copy(img_gray)
@@ -56,14 +59,18 @@ def main():
         mask = cv2.resize(mask, expected_img_size)
         img_gray = cv2.resize(img_gray, expected_img_size)
 
-        if init_once:
-            init_once = False
+        if frame_id % init_step == 0:
+            # init_once = False
+            tracker = cv2.MultiTracker_create()
             for j in range(num_objects):
+
                 bbox = cv2.selectROI("Tracking", img, False)
-                tracker.add(cv2.TrackerMIL_create(), img, bbox)
+                # tracker.add(cv2.TrackerMIL_create(), img, bbox)
                 x, y, w, h = bbox
 
                 mask_roi = mask[y:y + h, x:x + w]
+                kernel = np.ones((5, 5), np.uint8)
+                # mask_roi = cv2.erode(mask_roi, kernel, iterations=1)
                 img_roi = img[y:y + h, x:x + w]
 
                 mask_rois.append(mask_roi)
@@ -72,11 +79,14 @@ def main():
                 hist = cv2.calcHist([mask_roi], [0], None, [256], [0, 256])
                 hist[0] = 0
                 thresh = hist.argmax()
+                tracking_colors[j] = thresh
                 ret, obj_img = cv2.threshold(mask_roi, thresh - 1, 255, cv2.THRESH_BINARY)
                 zero_mask = np.zeros_like(mask)
                 zero_mask[y:y + h, x:x + w] = obj_img
                 im2, ctrs, hierarchy = cv2.findContours(zero_mask, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
                 contours.append(ctrs[0])
+                ctr_bbox = cv2.boundingRect(ctrs[0])
+                tracker.add(cv2.TrackerMIL_create(), img, ctr_bbox)
             demo = copy(img)
             for ctr_id in range(len(contours)):
                 cv2.drawContours(demo, contours, ctr_id, (0, 255, 0), 3)
@@ -84,68 +94,66 @@ def main():
             cv2.waitKey()
             continue
 
-        # params for ShiTomasi corner detection
-        # feature_params = dict(maxCorners=100,
-        #                       qualityLevel=0.3,
-        #                       minDistance=7,
-        #                       blockSize=7)
-        # # Parameters for lucas kanade optical flow
-        # lk_params = dict(winSize=(15, 15),
-        #                  maxLevel=2,
-        #                  criteria=(cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 10, 0.03))
-        # Create some random colors
-        # color = np.random.randint(0, 255, (100, 3))
-        # Take first frame and find corners in it
-        # p0 = cv2.goodFeaturesToTrack(prev_img_gray, mask=None, **feature_params)
 
         ok, boxes = tracker.update(img)
-        # calculate optical flow
-        new_pts, st, err = cv2.calcOpticalFlowPyrLK(prev_img_gray, img_gray, prev_contours[0].astype(np.float32), None, **lk_params)
-
-        good_pts = new_pts[st==1]
-        # flow = cv2.calcOpticalFlowFarneback(prev_img_gray, img_gray, None, 0.5, 3, 15, 3, 5, 1.2, 0)
-        #
-        # hsv = np.zeros_like(img)
-        # hsv[..., 1] = 255
-        #
-        # mag, ang = cv2.cartToPolar(flow[..., 0], flow[..., 1])
-        # hsv[..., 0] = ang * 180 / np.pi / 2
-        # hsv[..., 2] = cv2.normalize(mag, None, 0, 255, cv2.NORM_MINMAX)
-        # bgr = np.zeros_like(img)
-        # cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR, dst = bgr)
-        # cv2.imshow('frame2', bgr)
-        # cv2.waitKey()
-
-        # prvs = next
-        # contours.append(new_pts)
-        # Select good points
-        # good_new = p1[st == 1]
-        # good_old = p0[st == 1]
-        # draw the tracks
-        # for i, (new, old) in enumerate(zip(good_new, good_old)):
-        #     a, b = new.ravel()
-        #     c, d = old.ravel()
-        #     mask = cv2.line(mask, (a, b), (c, d), color[i].tolist(), 2)
-        #     frame = cv2.circle(frame, (a, b), 5, color[i].tolist(), -1)
         demo = copy(img)
-        ctr = list()
-        for new_box in boxes:
-            x,y,w,h = [int(e) for e in new_box]
-            cv2.rectangle(demo, (x, y), (x + w, y + h), (0, 255, 0), 3)
-        print(good_pts)
-        for pt in good_pts:
-            x,y = pt.ravel()
-            ctr.append([[int(x), int(y)]])
-            demo[int(y), int(x)] = (0,0,255)
-        contours.append(np.asarray(ctr))
+        for j in range(num_objects):
+
+            # print(len(prev_contours))
+            new_pts, st, err = cv2.calcOpticalFlowPyrLK(prev_img_gray, img_gray, prev_contours[j].astype(np.float32), None, **lk_params)
+            good_pts = new_pts[st==1]
+
+
+            ctr = list()
+            tracker_box = boxes[j]
+            x,y,w,h = [int(e) for e in tracker_box]
+            cv2.rectangle(demo, (x, y), (x + w, y + h), (0, 0, 255), 3)
+            # print(good_pts)
+            contour_box = cv2.boundingRect(good_pts)
+            x,y,w,h = contour_box
+            cv2.rectangle(demo, (x,y ), (x + w, y + h), (0, 255, 0), 3)
+
+            for pt in good_pts:
+                try:
+                    x,y = pt.ravel()
+                    ctr.append([[int(x), int(y)]])
+                except Exception as e:
+                    print("oops")
+            contours.append(np.asarray(ctr))
+            cv2.drawContours(demo, contours, j, (0, 255, 0), 3)
+
+            color = tracking_colors[j]
+            area_true = (mask == color).astype(np.uint8)*255
+            x, y, w, h = [int(e) for e in tracker_box]
+            area_contour = np.zeros_like(area_true)
+            cv2.drawContours(area_contour, contours, j, 255, cv2.FILLED)
+            area_true = area_true[y:y + h, x:x + w]
+            area_contour = area_contour[y:y + h, x:x + w]
+            # cv2.imshow("Tracking", area_contour)
+            # cv2.waitKey()
+            area_tp = cv2.bitwise_and(area_true, area_contour)
+            area_fn = cv2.bitwise_and(area_true, cv2.bitwise_not(area_contour))
+            area_fp = cv2.bitwise_and(cv2.bitwise_not(area_true), area_contour)
+            area_tn = cv2.bitwise_and(cv2.bitwise_not(area_true), cv2.bitwise_not(area_contour))
+
+            # cv2.imshow("Tracking", area_tp)
+            # cv2.waitKey()
+            tp = cv2.countNonZero(area_tp)
+            fn = cv2.countNonZero(area_fn)
+            fp = cv2.countNonZero(area_fp)
+            tn = cv2.countNonZero(area_tn)
+
+            precision = tp/(tp + fp)
+            recall = tp/(tp + fn)
+
+            print("Object", j)
+            print("precision", precision)
+            print("recall", recall)
+
+
         cv2.imshow("Tracking", demo)
         cv2.waitKey()
         # for newbox in boxes:
-
-
-
-    return
-
-
+        # cv.DrawContours(image3, contourmov, cv.CV_RGB(0, 255, 0), cv.CV_RGB(0, 255, 0), 1, cv.CV_FILLED)
 if __name__ == "__main__":
     main()
