@@ -7,7 +7,7 @@ class gameLife:
         self.height, self.width = self.init_dialogue()
         self.adjust_header = "Game Life. q - start; wasd - navigate; enter - set cell/remove"
         self.play_header = "Game Life. q - quit; space - pause/start"
-        self.delay = 1
+        self.delay = 0
         self.pixels_per_cell = 20
         self.pixels_border = 4
         self.species_count = 3
@@ -180,6 +180,8 @@ class gameLife:
                 self.set_cell(x,y, self.creature_colors[int(self.field[x][y])])
 
     def play(self):
+        imshow(self.play_header, self.field_image)
+        c = waitKey(self.delay)
         while(True):
             self.update_field()
             self.update_field_image()
