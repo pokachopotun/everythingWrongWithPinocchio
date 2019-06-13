@@ -7,22 +7,35 @@
 
 using namespace std;
 
-class Rational {
-public:
-    Rational() {
-        numerator = 0;
-        denominator = 1;
-        reduce();
+namespace {
+	
+    int gcd(int a, int b) {
+        while (b) {
+            a %= b;
+            swap(a, b);
+        }
+        return a;
     }
+}
 
-    Rational(int numerator, int denominator) {
+class Rational {
+private:
+    int numerator;
+    int denominator;
+
+public:
+    Rational(int numerator = 0, int denominator = 1) 
+		: numerator(numerator)
+		, denominator(denominator) 
+	{
         if (denominator == 0) {
             throw invalid_argument("Denominator should not be zero");
         }
-        this->numerator = numerator;
-        this->denominator = denominator;
         reduce();
     }
+	
+	Rational(const Rational&) = default;
+	Rational& operator=(const Rational&) = default;
 
     int Numerator() const {
         return numerator;
@@ -32,61 +45,14 @@ public:
         return denominator;
     }
 
-    Rational operator+(const Rational& other) {
-        return Rational(
-                this->Numerator() * other.Denominator() + this->Denominator() * other.Numerator(),
-                this->Denominator() * other.Denominator()
-        );
-    }
-
-    Rational operator-(const Rational& other) {
-        return Rational(
-                this->Numerator() * other.Denominator() - this->Denominator() * other.Numerator(),
-                this->Denominator() * other.Denominator()
-        );
-    }
-
-    Rational operator*(const Rational& other) {
-        return Rational(
-                this->Numerator() * other.Numerator(),
-                this->Denominator() * other.Denominator()
-        );
-    }
-
-    Rational operator/(const Rational& other) {
-        if (other.Denominator() == 0) {
-            throw std::domain_error("Division on zero");
-        }
-        return Rational(
-                this->Numerator() * other.Denominator(),
-                this->Denominator() * other.Numerator()
-        );
-    }
-
-
-    bool operator==(const Rational& other) const {
-        return numerator == other.Numerator() && denominator == other.Denominator();
-    }
-
     friend ostream& operator<<(ostream& out, const Rational& rational);
     friend istream& operator>>(istream& in, Rational& rational);
 
-    bool operator<(const Rational& other) const {
-        if (this->Denominator() == other.Denominator()) {
-            return this->Numerator() < other.Numerator();
-        } else {
-            return this->Numerator() * other.Denominator() < other.Numerator() * this->Denominator();
-        }
-    }
-
 private:
-    int numerator;
-    int denominator;
-
     void reduce() {
         if (denominator < 0) {
-            numerator *= -1;
-            denominator *= -1;
+            numerator = -numerator;
+            denominator = -denominator;
         }
 
         int divisor = gcd(abs(numerator), denominator);
@@ -95,19 +61,46 @@ private:
             denominator /= divisor;
         }
     }
-
-    int gcd(int a, int b) {
-		return b == 0 ? a : gcd( b, a % b );
-		if ( a < b ) {
-			swap(a,b);
-		}
-        while (b != 0) {
-            a %= b;
-            swap(a, b);
-        }
-        return a;
-    }
 };
+
+bool operator<(const Rational& lhs, const Rational& rhs) {
+	return lhs.Numerator() * rhs.Denominator() < rhs.Numerator() * lhs.Denominator();
+}
+
+bool operator==(const Rational& lhs, const Rational& rhs) {
+	return lhs.Numerator() == rhs.Numerator() && lhs.Denominator() == rhs.Denominator();
+}
+
+Rational operator+(const Rational& lhs, const Rational& rhs) {
+	return Rational(
+			lhs.Numerator() * rhs.Denominator() + lhs.Denominator() * rhs.Numerator(),
+			lhs.Denominator() * rhs.Denominator()
+	);
+}
+
+Rational operator-(const Rational& lhs, const Rational& rhs) {
+	return Rational(
+			lhs.Numerator() * rhs.Denominator() - lhs.Denominator() * rhs.Numerator(),
+			lhs.Denominator() * rhs.Denominator()
+	);
+}
+
+Rational operator*(const Rational& lhs, const Rational& rhs) {
+	return Rational(
+			lhs.Numerator() * rhs.Numerator(),
+			lhs.Denominator() * rhs.Denominator()
+	);
+}
+
+Rational operator/(const Rational& lhs, const Rational& rhs) {
+	if (rhs.Numerator() == 0 ) {
+		throw invalid_argument("division by zero");
+	}
+    return Rational(
+                lhs.Numerator() * rhs.Denominator(),
+                lhs.Denominator() * rhs.Numerator()
+        	);
+}
 
 ostream& operator<<(ostream& out, const Rational& rational) {
     return out << rational.Numerator() << '/' << rational.Denominator();
@@ -315,7 +308,7 @@ int main() {
             auto x = Rational(1, 2) / Rational(0, 1);
             cout << "Doesn't throw in case of division by zero" << endl;
             return 2;
-        } catch (std::domain_error& e) {
+        } catch (std::invalid_argument& e) {
             cout << "got exception 2" << endl;
         }
     }
